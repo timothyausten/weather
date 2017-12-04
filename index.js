@@ -8,18 +8,23 @@ function ajaxResponse(response) {
 
 function buildUrl() {
     // GSOM dataset (Global Summary of the Month) for GHCND station USC00010008, for May of 2010 with standard units
-    var baseUrl = 'https://www.ncdc.noaa.gov/cdo-web/api/v2/data',
-        datasetid = 'GSOM',
-        stationid = 'GHCND:USC00010008',
-        units = 'standard',
-        startdate = '2010-05-01',
-        enddate = '2010-05-31',
-        url = baseUrl + '?datasetid=' + datasetid + '&stationid=' + stationid + '&units=' + units + '&startdate=' + startdate + '&enddate=' + enddate;
+    var baseUrl, params, url;
+    baseUrl = 'https://www.ncdc.noaa.gov/cdo-web/api/v2/data?';
+    params = {
+        datasetid: 'GSOM',
+        stationid: 'GHCND:USC00010008',
+        units: 'standard',
+        startdate: '2010-05-01',
+        enddate: '2010-05-31'
+    };
+    // Produces, for example, datasetid=GSOM&stationid=GHCND:USC00010008&units=standard&startdate=2010-05-01&enddate=2010-05-31
+    params = $.param(params);
+    url = baseUrl + params;
     return url;
-};
+}
 console.log(buildUrl());
 
-$(function() {
+$(function () {
     $.ajax({
         url: buildUrl(),
         headers: {token: 'uZXRsebTFuZXQayyYanptuRTghYsovlk'},
