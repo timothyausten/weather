@@ -5,7 +5,7 @@ function ajaxResponse(response) {
     console.log(response);
 }
 
-function getOutput() {
+$(function() {
     $.ajax({
         url: 'https://www.ncdc.noaa.gov/cdo-web/api/v2/datasets?stationid=GHCND:US1WACK0003',
         headers: {token: 'uZXRsebTFuZXQayyYanptuRTghYsovlk'},
@@ -22,7 +22,7 @@ function getOutput() {
             console.log(response);
         }
     });
-}
+});
 
 // JSON.stringify()
 // JSON.parse(response.responseText)
