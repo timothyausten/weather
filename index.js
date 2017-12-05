@@ -21,16 +21,31 @@ APIparams.orchards = {
 };
 
 function ajaxResponse(response) {
-    var i, datatype, value, datatypeAndValue;
+    var i, datatype, value, datatypesAndValues = {};
     var beautifiedJSON = JSON.stringify(response, null, 4);
     console.log(response);
     for (i=0;i<response.responseJSON.results.length;i++) {
         datatype = response.responseJSON.results[i].datatype;
         value = response.responseJSON.results[i].value;
-        datatypeAndValue = datatype +  ": " + value;
-        $('#output').append(datatypeAndValue);
+        datatypesAndValues[datatype] = value;
+        $('#output').html(JSON.stringify(datatypesAndValues, null, 4));
     }
 }
+
+function dataTypeResponse(response) {
+    var i, datatype, value, datatypesAndValues = {};
+    var beautifiedJSON = JSON.stringify(response, null, 4);
+    console.log(response);
+    for (i=0;i<response.responseJSON.results.length;i++) {
+        datatype = response.responseJSON.results[i].id;
+        value = response.responseJSON.results[i].name;
+        datatypesAndValues[datatype] = value;
+        $('#output2').html(JSON.stringify(datatypesAndValues, null, 4));
+    }
+}
+
+
+
 
 function buildUrl() {
     // GSOM dataset (Global Summary of the Month) for GHCND station USC00010008, for May of 2010 with standard units
@@ -56,6 +71,26 @@ $(function () {
         }
     });
 });
+
+// Get available data types
+$(function () {
+    var orchards = 'https://www.ncdc.noaa.gov/cdo-web/api/v2/datatypes?stationid=GHCND:US1WACK0003&startdate=1970-01-01&enddate=2100-12-31', everywhere = 'https://www.ncdc.noaa.gov/cdo-web/api/v2/datatypes?datasetid=GSOM&startdate=1970-01-01&enddate=2100-12-31';
+    $.ajax({
+        url: everywhere,
+        headers: {
+            token: 'uZXRsebTFuZXQayyYanptuRTghYsovlk',
+        },
+        complete: function (response) {
+            dataTypeResponse(response);
+        },
+        error: function (response) {
+            dataTypeResponse(response);
+        }
+    });
+});
+
+
+
 
 // JSON.stringify()
 // JSON.parse(response.responseText)
