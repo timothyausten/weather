@@ -3,16 +3,21 @@
 /*eslint no-console: "off", no-unused-vars: "off"*/
 
 
-var APIparams = {};
+var urlAndToken = {},
+    urlParams = {};
 
-APIparams.example = {
+urlAndToken = {
+    url: 'https://www.ncdc.noaa.gov/cdo-web/api/v2/data?',
+    token: 'uZXRsebTFuZXQayyYanptuRTghYsovlk'
+}
+urlParams.example = {
     datasetid: 'GSOM',
     stationid: 'GHCND:USC00010008',
     units: 'standard',
     startdate: '2010-05-01',
     enddate: '2010-05-31'
 };
-APIparams.orchards = {
+urlParams.orchards = {
     datasetid: 'GSOM',
     stationid: 'GHCND:US1WACK0003',
     units: 'standard',
@@ -50,8 +55,8 @@ function dataTypeResponse(response) {
 function buildUrl() {
     // GSOM dataset (Global Summary of the Month) for GHCND station USC00010008, for May of 2010 with standard units
     var baseUrl, params, url;
-    baseUrl = 'https://www.ncdc.noaa.gov/cdo-web/api/v2/data?';
-    params = APIparams.orchards;
+    baseUrl = urlAndToken.url;
+    params = urlParams.orchards;
     // Produces, for example, datasetid=GSOM&stationid=GHCND:USC00010008&units=standard&startdate=2010-05-01&enddate=2010-05-31
     params = $.param(params);
     url = baseUrl + params;
@@ -62,7 +67,7 @@ console.log(buildUrl());
 $(function () {
     $.ajax({
         url: buildUrl(),
-        headers: {token: 'uZXRsebTFuZXQayyYanptuRTghYsovlk'},
+        headers: {token: urlAndToken.token},
         complete: function (response) {
             ajaxResponse(response);
         },
@@ -78,7 +83,7 @@ $(function () {
     $.ajax({
         url: everywhere,
         headers: {
-            token: 'uZXRsebTFuZXQayyYanptuRTghYsovlk',
+            token: urlAndToken.token,
         },
         complete: function (response) {
             dataTypeResponse(response);
