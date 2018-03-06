@@ -10,7 +10,7 @@ var urlAndToken = {},
 
 urlAndToken = {
     url: 'https://www.ncdc.noaa.gov/cdo-web/api/v2/data?',
-    token: document.getElementById('token').value,
+    token: 'API token here',
 }
 urlParams.example = {
     datasetid: 'GSOM',
@@ -99,16 +99,11 @@ function getAvailableDataTypes() {
     });
 }
 
-// Wait for document.getElementById('token').value to contain value
-// For some reason, this just isn't working, and the API token gets rejected.
-// Interestingly, without the timeout, alert() returns the api token, but console.log() does not
-function calc(){
-    setTimeout(function () {
-        console.log(document.getElementById('token').value);
-        getData();
-        getAvailableDataTypes();
-    }, 1000)
-}
+// Launch app
+$(function () {
+getData();
+    getAvailableDataTypes();
+});
 
 
 
