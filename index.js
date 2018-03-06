@@ -1,4 +1,4 @@
-/*global $,console*/
+/*global $,console,document*/
 /* https://eslint.org/docs/user-guide/configuring */
 /*eslint no-console: "off", no-unused-vars: "off"*/
 
@@ -6,9 +6,11 @@
 var urlAndToken = {},
     urlParams = {};
 
+// document.getElementById('token')
+
 urlAndToken = {
     url: 'https://www.ncdc.noaa.gov/cdo-web/api/v2/data?',
-    token: 'uZXRsebTFuZXQayyYanptuRTghYsovlk'
+    token: document.getElementById('token').value,
 }
 urlParams.example = {
     datasetid: 'GSOM',
@@ -25,10 +27,11 @@ urlParams.orchards = {
     enddate: '2010-05-31'
 };
 
+// Format and output weather data from AJAX response
 function ajaxResponse(response) {
     var i, datatype, value, datatypesAndValues = {};
     var beautifiedJSON = JSON.stringify(response, null, 4);
-    console.log(response);
+    // console.log(response);
     for (i=0;i<response.responseJSON.results.length;i++) {
         datatype = response.responseJSON.results[i].datatype;
         value = response.responseJSON.results[i].value;
@@ -37,10 +40,11 @@ function ajaxResponse(response) {
     }
 }
 
+// Format and output list of data types from AJAX response
 function dataTypeResponse(response) {
     var i, datatype, value, datatypesAndValues = {};
     var beautifiedJSON = JSON.stringify(response, null, 4);
-    console.log(response);
+    // console.log(response);
     for (i=0;i<response.responseJSON.results.length;i++) {
         datatype = response.responseJSON.results[i].id;
         value = response.responseJSON.results[i].name;
@@ -64,7 +68,8 @@ function buildUrl() {
 }
 console.log(buildUrl());
 
-$(function () {
+// get data
+function getData() {
     $.ajax({
         url: buildUrl(),
         headers: {token: urlAndToken.token},
@@ -75,10 +80,10 @@ $(function () {
             ajaxResponse(response);
         }
     });
-});
+}
 
 // Get available data types
-$(function () {
+function getAvailableDataTypes() {
     var orchards = 'https://www.ncdc.noaa.gov/cdo-web/api/v2/datatypes?stationid=GHCND:US1WACK0003&startdate=1970-01-01&enddate=2100-12-31', everywhere = 'https://www.ncdc.noaa.gov/cdo-web/api/v2/datatypes?datasetid=GSOM&startdate=1970-01-01&enddate=2100-12-31';
     $.ajax({
         url: everywhere,
@@ -92,8 +97,18 @@ $(function () {
             dataTypeResponse(response);
         }
     });
-});
+}
 
+// Wait for document.getElementById('token').value to contain value
+// For some reason, this just isn't working, and the API token gets rejected.
+// Interestingly, without the timeout, alert() returns the api token, but console.log() does not
+function calc(){
+    setTimeout(function () {
+        console.log(document.getElementById('token').value);
+        getData();
+        getAvailableDataTypes();
+    }, 1000)
+}
 
 
 
