@@ -16,7 +16,9 @@ var urlAndToken = {},
 	dateFormatted,
 	temp = [],
 	TempArray = [],
-	urlOutput;
+	urlOutput,
+	singleTemperature = [];
+;
 
 // document.getElementById('token')
 
@@ -113,9 +115,34 @@ function buildUrlRangeOfDays() {
 /***********************
  * Output data to HTML *
  ***********************/
+ 
+function WeatherResponse(response, index) {
+    var i, datatype, value;
+    var beautifiedJSON = JSON.stringify(response, null, 4);
+    console.log(response);
+	this.datatypesAndValues = {};
+    for (i=0;i<response.responseJSON.results.length;i++) {
+        datatype = response.responseJSON.results[i].datatype;
+        value = response.responseJSON.results[i].value;
+        this.datatypesAndValues[datatype] = value;
+	}
+}
 
-// Format and output temperature highs from within date range
+//bookmark
 function tempHighResponse(response, index) {
+	singleTemperature[index] = new WeatherResponse(response, index);
+	temp = singleTemperature[index].datatypesAndValues.EMXP;
+	console.log('Hello World 2');
+	console.log('Temperature: ' + temp);
+	console.log('Index: ' + index);
+	TempArray[index] = temp;
+	console.log('Temerature list: ' + TempArray);
+    $('#output').html(JSON.stringify(TempArray	, null, 4));
+}
+ 
+ 
+// Format and output temperature highs from within date range
+function tempHighResponseOld(response, index) {
     var i, datatype, value, datatypesAndValues = {};
     var beautifiedJSON = JSON.stringify(response, null, 4);
     console.log(response);
@@ -134,19 +161,11 @@ function tempHighResponse(response, index) {
 
 // Format and output weather data from AJAX response
 function ajaxResponse(response) {
-    var i, datatype, value, datatypesAndValues = {};
-    var beautifiedJSON = JSON.stringify(response, null, 4);
-    // console.log(response);
-    for (i=0;i<response.responseJSON.results.length;i++) {
-        datatype = response.responseJSON.results[i].datatype;
-        value = response.responseJSON.results[i].value;
-        datatypesAndValues[datatype] = value;
-		temp = datatypesAndValues.EMXP;
-    }
-    $('#output2').html(JSON.stringify(datatypesAndValues, null, 4));
-	console.log(datatypesAndValues);
+	var singleTemperature = new WeatherResponse(response, index);
+    $('#output2').html(JSON.stringify(singleTemperature.datatypesAndValues, null, 4));
+	console.log(singleTemperature.datatypesAndValues);
 	// Get just the temperature high for the day
-	console.log(datatypesAndValues.EMXP);
+	console.log(singleTemperature.datatypesAndValues.EMXP);
 }
 
 // Format and output list of data types from AJAX response
@@ -160,6 +179,12 @@ function dataTypeResponse(response) {
         datatypesAndValues[datatype] = value;
     }
 	$('#output3').html(JSON.stringify(datatypesAndValues, null, 4));
+}
+
+// Format and output list of data types from AJAX response
+function dataTypeResponseOld(response) {
+	var dataTypes = new WeatherResponse(response, index);
+	$('#output3').html(JSON.stringify(dataTypes.datatypesAndValues, null, 4));
 }
 
 
@@ -202,6 +227,8 @@ function getHighs() {
 			console.log('Dates: ' + listOfDates);
 			urlOutput = buildUrlOneDay(day);
 			console.log(urlOutput);
+			console.log('Index at AJAX call: ' + index);
+
 				$.ajax({
 					url: urlOutput,
 					headers: {token: urlAndToken.token},
@@ -256,8 +283,8 @@ function getAvailableDataTypes() {
 // Launch app
 $(function () {
 getHighs();
-// getData();
-// getAvailableDataTypes();
+getData();
+getAvailableDataTypes();
 });
 
 
