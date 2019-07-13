@@ -6,4 +6,5 @@ Perhaps you are having a particularly bad winter where you live. Even though you
 
 Code progress
 
-The code so far has managed to get data from single ajax calls, for example the temperature high for a day. The trouble right now is that in order to get the temperature highs for each day over a year, the app has to send multiple AJAX calls to the server. This would be all right, but for some reason only the first AJAX call is getting a response, and the rest are getting property undefined errors. Attempting to send multiple AJAX calls with multiple versions of constructor object.
+The app succeeds at sending one AJAX request for each day within a range of days. For example, it looks up the temperature high for each day between 2008 and 2018.
+

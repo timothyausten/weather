@@ -12,6 +12,7 @@ var urlAndToken = {},
 	dateStartString,
 	dateEndString,
 	d = [],
+	n,
 	day,
 	dateFormatted,
 	temp = [],
@@ -30,13 +31,13 @@ urlAndToken = {
 
 dateRange = {
 	start: {
-		year: 2010,
-		month: 5,
+		year: 2008,
+		month: 1,
 		day: 1
 	}, end: {
-		year: 2010,
-		month: 5,
-		day: 2
+		year: 2018,
+		month: 12,
+		day: 31
 	}
 }
 
@@ -58,33 +59,50 @@ for (d = dateStart; d <= dateEnd; d.setDate(d.getDate() + 1)) {
     dateFormatted = d.toISOString().substring(0, 10);
 	listOfDates.push(dateFormatted);
 }
-console.log(listOfDates);
-
+console.log('listOfDates: ' + JSON.stringify(listOfDates, null, 4));
 
 
 urlParams.example = {
     datasetid: 'GSOM',
-    stationid: 'GHCND:USC00010008',
+	locationid: 'FIPS:37',
     units: 'standard',
     startdate: '2010-05-01',
     enddate: '2010-05-31'
 };
 urlParams.orchards = {
-    datasetid: 'GSOM',
-    stationid: 'GHCND:US1WACK0003',
+    datasetid: 'GHCND',
+	locationid: 'ZIP:28801',
     units: 'standard',
-    startdate: '2010-05-01',
-    enddate: '2010-05-31'
+    startdate: '2010-01-01',
+    enddate: '2010-03-01',
 };
 
+// locationid: 'ZIP:28801' (somewhere in north carolina)
+// locationid: 'FIPS:37' (north carolina) throws errors for some reason
+// stationid: 'GHCND:USC00010008',
 
-function buildUrlOneDay(day) {
+/*
+Available datasets
+    "GHCND": "Daily Summaries",
+    "GSOM": "Global Summary of the Month",
+    "GSOY": "Global Summary of the Year",
+    "NEXRAD2": "Weather Radar (Level II)",
+    "NEXRAD3": "Weather Radar (Level III)",
+    "NORMAL_ANN": "Normals Annual/Seasonal",
+    "NORMAL_DLY": "Normals Daily",
+    "NORMAL_HLY": "Normals Hourly",
+    "NORMAL_MLY": "Normals Monthly",
+    "PRECIP_15": "Precipitation 15 Minute",
+    "PRECIP_HLY": "Precipitation Hourly"
+*/
+
+function buildUrlOneDay(date) {
     // GSOM dataset (Global Summary of the Month) for GHCND station USC00010008, for May of 2010 with standard units
     var baseUrl, params, url;
     baseUrl = urlAndToken.url;
     params = urlParams.orchards;
-	params.startdate = day;
-	params.enddate = day;
+	params.startdate = date;
+	params.enddate = date;
     // Produces, for example, datasetid=GSOM&stationid=GHCND:USC00010008&units=standard&startdate=2010-05-01&enddate=2010-05-31
     params = $.param(params);
     url = baseUrl + params;
@@ -105,33 +123,36 @@ function buildUrlRangeOfDays() {
 }
 // console.log(buildUrlRangeOfDays());
 
-
-
-
-
-
-
-
-/***********************
- * Output data to HTML *
- ***********************/
- 
-function WeatherResponse(response, index) {
-    var i, datatype, value;
+function WeatherResponse(response) {
+    var i, datatype, value, measurement, description;
     var beautifiedJSON = JSON.stringify(response, null, 4);
     console.log(response);
 	this.datatypesAndValues = {};
+	this.measurementsAndDescriptions = {};
     for (i=0;i<response.responseJSON.results.length;i++) {
         datatype = response.responseJSON.results[i].datatype;
         value = response.responseJSON.results[i].value;
         this.datatypesAndValues[datatype] = value;
+		
+		measurement = response.responseJSON.results[i].id;
+        description = response.responseJSON.results[i].name;
+        this.measurementsAndDescriptions[measurement] = description;
 	}
 }
 
-//bookmark
-function tempHighResponse(response, index) {
-	singleTemperature[index] = new WeatherResponse(response, index);
-	temp = singleTemperature[index].datatypesAndValues.EMXP;
+
+
+
+
+
+	
+/***********************
+ * Output data to HTML *
+ ***********************/
+ 
+function tempHighResponseNormal(response, index) {
+	singleTemperature[index] = new WeatherResponse(response);
+	temp = singleTemperature[index].datatypesAndValues.TMAX;
 	console.log('Hello World 2');
 	console.log('Temperature: ' + temp);
 	console.log('Index: ' + index);
@@ -139,7 +160,28 @@ function tempHighResponse(response, index) {
 	console.log('Temerature list: ' + TempArray);
     $('#output').html(JSON.stringify(TempArray	, null, 4));
 }
+
+function tempHighResponse0(response, DayNumber) {
+	singleTemperature[DayNumber] = new WeatherResponse(response);
+	temp = singleTemperature[DayNumber].datatypesAndValues.TMAX;
+	console.log('Hello World 2');
+	console.log('Temperature: ' + temp);
+	console.log('Index: ' + DayNumber);
+	TempArray[DayNumber] = temp;
+	console.log('Temerature list: ' + TempArray);
+    $('#output').html('List of temperatures:<br>' + TempArray.toString());
+}
  
+function tempHighResponse1(response, day) {
+	singleTemperature[day] = new WeatherResponse(response);
+	temp = singleTemperature[day].datatypesAndValues.TMAX;
+	console.log('Hello World 3');
+	console.log('Temperature: ' + temp);
+	console.log('Index: ' + day);
+	TempArray[day] = temp;
+	console.log('Temerature list: ' + TempArray);
+    $('#output').html('List of temperatures:<br>' + JSON.stringify(TempArray, null, 4));
+}
  
 // Format and output temperature highs from within date range
 function tempHighResponseOld(response, index) {
@@ -151,7 +193,7 @@ function tempHighResponseOld(response, index) {
         value = response.responseJSON.results[i].value;
         datatypesAndValues[datatype] = value;
 	}
-	temp = datatypesAndValues.EMXP;
+	temp = datatypesAndValues.TMAX;
 	console.log('Hello World 2');
 	console.log('Temperature: ' + temp);
 	console.log('Index: ' + index);
@@ -161,33 +203,21 @@ function tempHighResponseOld(response, index) {
 
 // Format and output weather data from AJAX response
 function ajaxResponse(response) {
-	var singleTemperature = new WeatherResponse(response, index);
-    $('#output2').html(JSON.stringify(singleTemperature.datatypesAndValues, null, 4));
-	console.log(singleTemperature.datatypesAndValues);
+	var multiTemp = new WeatherResponse(response);
+    $('#output2').html(JSON.stringify(multiTemp.datatypesAndValues, null, 4));
+    console.log('multiTemp: ');
+	console.log(multiTemp);
 	// Get just the temperature high for the day
-	console.log(singleTemperature.datatypesAndValues.EMXP);
+	console.log(multiTemp.datatypesAndValues.TMAX);
 }
 
 // Format and output list of data types from AJAX response
 function dataTypeResponse(response) {
-    var i, datatype, value, datatypesAndValues = {};
-    var beautifiedJSON = JSON.stringify(response, null, 4);
-    // console.log(response);
-    for (i=0;i<response.responseJSON.results.length;i++) {
-        datatype = response.responseJSON.results[i].id;
-        value = response.responseJSON.results[i].name;
-        datatypesAndValues[datatype] = value;
-    }
-	$('#output3').html(JSON.stringify(datatypesAndValues, null, 4));
+	var allMetaData = new WeatherResponse(response);
+	$('#output3').html(JSON.stringify(allMetaData.measurementsAndDescriptions, null, 4));
+	console.log('Meta data: ');
+	console.log(allMetaData);
 }
-
-// Format and output list of data types from AJAX response
-function dataTypeResponseOld(response) {
-	var dataTypes = new WeatherResponse(response, index);
-	$('#output3').html(JSON.stringify(dataTypes.datatypesAndValues, null, 4));
-}
-
-
 
 /********
  * AJAX *
@@ -196,39 +226,17 @@ function dataTypeResponseOld(response) {
 
 // get temperature highs
 
-
-/*
-// Test asynchronous behavior with for loops
-for (var i = 1; i <= 10; i++) {
-	(function(index) {
-		setTimeout(function() { console.log(index); }, i*1000);
-	})(i);
-}
-*/
-
-/*
-for (var i .....) {
-  (function (i) {
-    async(function() {
-      use(i);
-    });
-  })(i);
-}
-*/
-
-// $.each(linkList, function (i, item) {
-
-function getHighs() {
-		for (var n=0;n<listOfDates.length;n++) {
-		(function(index) {
-		// $.each(listOfDates, function(index, value) {
-		// setTimeout(function() {
+function getHighsNormal() {
+	// for (var n=0;n<listOfDates.length;n++) {
+		//console.log('For loop index: ' + index);
+		// (function(index) {
+	$.each(listOfDates, function(index, value) {
+		setTimeout(function() {
 			day = listOfDates[index];
 			console.log('Dates: ' + listOfDates);
 			urlOutput = buildUrlOneDay(day);
 			console.log(urlOutput);
 			console.log('Index at AJAX call: ' + index);
-
 				$.ajax({
 					url: urlOutput,
 					headers: {token: urlAndToken.token},
@@ -239,10 +247,71 @@ function getHighs() {
 						tempHighResponse(response, index);
 					}
 				});
-		 // }(), index*200);
-		})(n);
-}}
+		}(), index*200);
+		// })(n);
+	});
+}
 // $('#output').html(JSON.stringify(TempArray, null, 4));
+
+//bookmark
+function getHighs0(day) {
+	date = listOfDates[day];
+	console.log('Date: ' + date);
+	console.log('DayNumber: ' + day);
+	console.log('Date: ' + date);
+	urlOutput = buildUrlOneDay(date);
+	console.log(urlOutput);
+	console.log('Index at AJAX call: ' + day);
+	$.ajax({
+		url: urlOutput,
+		headers: {token: urlAndToken.token},
+		complete: function (response) {
+			tempHighResponse0(response, day);
+		},
+		error: function (response) {
+			tempHighResponse0(response, day);
+		}
+	});
+}
+
+// bookmark
+function getHighs1(day) {
+	var DayNumber = day;
+	date = listOfDates[day];
+	console.log('Date: ' + date);
+	console.log('DayNumber: ' + day);
+	urlOutput = buildUrlOneDay(date);
+	$.ajax({
+		url: urlOutput,
+		headers: {token: urlAndToken.token},
+		complete: function (response) {
+			tempHighResponse1(response, day);
+		},
+		error: function (response) {
+			tempHighResponse1(response, day);
+		}
+	});
+}
+
+function getHighs(day) {
+	date = listOfDates[day];
+	console.log('Date: ' + date);
+	console.log('DayNumber: ' + day);
+	console.log('Date: ' + date);
+	urlOutput = buildUrlOneDay(date);
+	console.log(urlOutput);
+	console.log('Index at AJAX call: ' + day);
+	$.ajax({
+		url: urlOutput,
+		headers: {token: urlAndToken.token},
+		complete: function (response) {
+			tempHighResponse0(response, day);
+		},
+		error: function (response) {
+			tempHighResponse0(response, day);
+		}
+	});
+}
 
 
 // get data
@@ -262,9 +331,17 @@ function getData() {
 
 // Get available data types
 function getAvailableDataTypes() {
-    var orchards = 'https://www.ncdc.noaa.gov/cdo-web/api/v2/datatypes?stationid=GHCND:US1WACK0003&startdate=1970-01-01&enddate=2100-12-31', everywhere = 'https://www.ncdc.noaa.gov/cdo-web/api/v2/datatypes?datasetid=GSOM&startdate=1970-01-01&enddate=2100-12-31';
+    var orchards = 'https://www.ncdc.noaa.gov/cdo-web/api/v2/datatypes?stationid=GHCND:US1WACK0003&startdate=1970-01-01&enddate=2100-12-31',
+	everywhereGSOM = 'https://www.ncdc.noaa.gov/cdo-web/api/v2/datatypes?datasetid=GSOM',
+	everywhereGHCND = 'https://www.ncdc.noaa.gov/cdo-web/api/v2/datatypes?datasetid=GHCND',
+	dataSetsWithTemp = 'https://www.ncdc.noaa.gov/cdo-web/api/v2/datasets?datatypeid=LTMN',
+	dataSetsAll = 'https://www.ncdc.noaa.gov/cdo-web/api/v2/datasets'
+	tmax = 'https://www.ncdc.noaa.gov/cdo-web/api/v2/datatypes/TMAX',
+	dataTypesTemp = 'https://www.ncdc.noaa.gov/cdo-web/api/v2/datatypes?datacategoryid=TEMP&limit=200';
+	// HTMX LTMN TMAX TMIN
+	// NORMAL_DLY
     $.ajax({
-        url: everywhere,
+        url: dataTypesTemp,
         headers: {
             token: urlAndToken.token,
         },
@@ -282,8 +359,18 @@ function getAvailableDataTypes() {
 
 // Launch app
 $(function () {
-getHighs();
-getData();
+
+/*
+*/
+
+$.each(listOfDates, function(index, value) {
+	setTimeout(function() {
+		getHighs(index);
+	}, index*400);
+});
+
+
+getData();4
 getAvailableDataTypes();
 });
 
