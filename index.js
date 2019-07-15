@@ -35,7 +35,7 @@ dateRange = {
 		month: 1,
 		day: 1
 	}, end: {
-		year: 2018,
+		year: 2008,
 		month: 12,
 		day: 31
 	}
@@ -59,7 +59,6 @@ for (d = dateStart; d <= dateEnd; d.setDate(d.getDate() + 1)) {
     dateFormatted = d.toISOString().substring(0, 10);
 	listOfDates.push(dateFormatted);
 }
-console.log('listOfDates: ' + JSON.stringify(listOfDates, null, 4));
 
 
 urlParams.example = {
@@ -75,11 +74,17 @@ urlParams.orchards = {
     units: 'standard',
     startdate: '2010-01-01',
     enddate: '2010-03-01',
+	limit: 1000,
+	datatypeid: 'TMAX'
 };
 
+// locationid: 'GHCND:FIE00144212' (vaasa)
+// locationid: 'GHCND:USW00024229' (pdx)
 // locationid: 'ZIP:28801' (somewhere in north carolina)
 // locationid: 'FIPS:37' (north carolina) throws errors for some reason
-// stationid: 'GHCND:USC00010008',
+// stationid: 'GHCND:USC00010008' (orchards),
+
+
 
 /*
 Available datasets
@@ -124,21 +129,32 @@ function buildUrlRangeOfDays() {
 // console.log(buildUrlRangeOfDays());
 
 function WeatherResponse(response) {
-    var i, datatype, value, measurement, description;
+    var i, datatype, value, measurement, description, date, value;
     var beautifiedJSON = JSON.stringify(response, null, 4);
     console.log(response);
 	this.datatypesAndValues = {};
 	this.measurementsAndDescriptions = {};
+	this.datesAndValues = [];
     for (i=0;i<response.responseJSON.results.length;i++) {
+		// For when the response contains information about stations, locations, and datatypes
         datatype = response.responseJSON.results[i].datatype;
         value = response.responseJSON.results[i].value;
         this.datatypesAndValues[datatype] = value;
 		
+		// For when the response contains single values for a date range
+		// and not an array of values for multiple days
 		measurement = response.responseJSON.results[i].id;
         description = response.responseJSON.results[i].name;
         this.measurementsAndDescriptions[measurement] = description;
-	}
+
+		// For when the results contain an array of dates and temperatures
+		date = response.responseJSON.results[i].date;
+		date = date.substring(0, 10);
+		value = response.responseJSON.results[i].value;
+		this.datesAndValues.push([date, value]);
+		}
 }
+
 
 
 
@@ -211,6 +227,33 @@ function ajaxResponse(response) {
 	console.log(multiTemp.datatypesAndValues.TMAX);
 }
 
+// bookmark
+function getHighsNoLoopResponse(response) {
+	var date, value, JSON2Table = [];
+	var multiTemp = new WeatherResponse(response);
+	console.log(multiTemp);
+	
+	
+	for (i=0;i<multiTemp.datesAndValues.length;i++) {
+		date = multiTemp.datesAndValues[i][0];
+		value = multiTemp.datesAndValues[i][1];
+		JSON2Table.push('<br>' + date + '&nbsp;&nbsp;&nbsp;&nbsp;' + value);
+	}
+
+	
+	console.log('listOfDates:<br>' + multiTemp.datesAndValues);
+  	$('#output').html('listOfDates:<br>' + JSON2Table);	
+	
+	
+}
+
+
+	
+	
+	
+	
+	
+	
 // Format and output list of data types from AJAX response
 function dataTypeResponse(response) {
 	var allMetaData = new WeatherResponse(response);
@@ -221,39 +264,12 @@ function dataTypeResponse(response) {
 
 /********
  * AJAX *
- ********/
+ ********/ 
 
 
 // get temperature highs
 
-function getHighsNormal() {
-	// for (var n=0;n<listOfDates.length;n++) {
-		//console.log('For loop index: ' + index);
-		// (function(index) {
-	$.each(listOfDates, function(index, value) {
-		setTimeout(function() {
-			day = listOfDates[index];
-			console.log('Dates: ' + listOfDates);
-			urlOutput = buildUrlOneDay(day);
-			console.log(urlOutput);
-			console.log('Index at AJAX call: ' + index);
-				$.ajax({
-					url: urlOutput,
-					headers: {token: urlAndToken.token},
-					complete: function (response) {
-						tempHighResponse(response, index);
-					},
-					error: function (response) {
-						tempHighResponse(response, index);
-					}
-				});
-		}(), index*200);
-		// })(n);
-	});
-}
-// $('#output').html(JSON.stringify(TempArray, null, 4));
 
-//bookmark
 function getHighs0(day) {
 	date = listOfDates[day];
 	console.log('Date: ' + date);
@@ -274,7 +290,6 @@ function getHighs0(day) {
 	});
 }
 
-// bookmark
 function getHighs1(day) {
 	var DayNumber = day;
 	date = listOfDates[day];
@@ -329,6 +344,21 @@ function getData() {
     });
 }
 
+// get data
+function getHighsNoLoop() {
+	urlOutput = buildUrlRangeOfDays();
+    $.ajax({
+        url: urlOutput,
+        headers: {token: urlAndToken.token},
+        complete: function (response) {
+            getHighsNoLoopResponse(response);
+        },
+        error: function (response) {
+            getHighsNoLoopResponse(response);
+        }
+    });
+}
+
 // Get available data types
 function getAvailableDataTypes() {
     var orchards = 'https://www.ncdc.noaa.gov/cdo-web/api/v2/datatypes?stationid=GHCND:US1WACK0003&startdate=1970-01-01&enddate=2100-12-31',
@@ -338,6 +368,10 @@ function getAvailableDataTypes() {
 	dataSetsAll = 'https://www.ncdc.noaa.gov/cdo-web/api/v2/datasets'
 	tmax = 'https://www.ncdc.noaa.gov/cdo-web/api/v2/datatypes/TMAX',
 	dataTypesTemp = 'https://www.ncdc.noaa.gov/cdo-web/api/v2/datatypes?datacategoryid=TEMP&limit=200';
+
+
+response = requests.get(url, headers = headers)
+	
 	// HTMX LTMN TMAX TMIN
 	// NORMAL_DLY
     $.ajax({
@@ -361,17 +395,16 @@ function getAvailableDataTypes() {
 $(function () {
 
 /*
-*/
-
 $.each(listOfDates, function(index, value) {
 	setTimeout(function() {
 		getHighs(index);
 	}, index*400);
 });
+*/
 
-
-getData();4
-getAvailableDataTypes();
+getHighsNoLoop();
+// getData();4
+// getAvailableDataTypes();
 });
 
 

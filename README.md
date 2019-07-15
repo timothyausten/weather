@@ -6,5 +6,5 @@ Perhaps you are having a particularly bad winter where you live. Even though you
 
 Code progress
 
-The app succeeds at sending one AJAX request for each day within a range of days. For example, it looks up the temperature high for each day between 2008 and 2018.
+The app retrieves a list of dates and temperatures within a date range. For example, it looks up the temperature high for each day between 2008 and 2018.
 
