@@ -218,12 +218,9 @@ function getHighsNoLoopResponse(response, year, j) {
 		dateRange.end.year = year + j + 1;
 		date = multiTemp.datesAndValues[i][0];
 		value = multiTemp.datesAndValues[i][1];
-		multiyearValues[i] = [];
-		multiyearValues[i][j] = value;
         JSON2TextTable = JSON2TextTable + date + '&nbsp;&nbsp;&nbsp;&nbsp;' + value + '<br>';
 	}
 	console.log(dateRange.end.year);
-    console.log(multiyearValues[0][0] + ',' + multiyearValues[0][1] + ',' + multiyearValues[0][2]);
   	$('#output').html('Daily temperature highs:<br>' + JSON2TextTable);	
 }
 
