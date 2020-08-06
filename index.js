@@ -18,8 +18,9 @@ var urlAndToken = {},
 	temp = [],
 	TempArray = [],
 	urlOutput,
-	singleTemperature = [];
-;
+	singleTemperature = [],
+	multiyearValues = [];
+
 
 // document.getElementById('token')
 
@@ -32,14 +33,15 @@ urlAndToken = {
 dateRange = {
 	start: {
 		year: 2008,
-		month: 1,
+		month: 11,
 		day: 1
 	}, end: {
-		year: 2008,
-		month: 12,
+		year: 2009,
+		month: 3,
 		day: 31
 	}
 }
+
 
 
 // Subtract 1 from the input value for month because
@@ -49,10 +51,6 @@ dateStart = new Date(dateRange.start.year, dateRange.start.month - 1, dateRange.
 dateEnd = new Date(dateRange.end.year, dateRange.end.month - 1, dateRange.end.day + 1);
 dateStartString = dateStart.toISOString().substring(0, 10)
 dateEndString = dateEnd.toISOString().substring(0, 10)
-console.log(dateStartString);
-console.log(dateEndString);
-
-
 
 // Build a list of dates in ISO format
 for (d = dateStart; d <= dateEnd; d.setDate(d.getDate() + 1)) {
@@ -70,14 +68,15 @@ urlParams.example = {
 };
 urlParams.orchards = {
     datasetid: 'GHCND',
-	locationid: 'ZIP:28801',
-    units: 'standard',
+	stationid: 'GHCND:FIE00143471',
+    units: 'metric',
     startdate: '2010-01-01',
     enddate: '2010-03-01',
 	limit: 1000,
 	datatypeid: 'TMAX'
 };
 
+// locationid: 'GHCND:FIE00143471' (kauhajoki)
 // locationid: 'GHCND:FIE00144212' (vaasa)
 // locationid: 'GHCND:USW00024229' (pdx)
 // locationid: 'ZIP:28801' (somewhere in north carolina)
@@ -131,7 +130,7 @@ function buildUrlRangeOfDays() {
 function WeatherResponse(response) {
     var i, datatype, value, measurement, description, date, value;
     var beautifiedJSON = JSON.stringify(response, null, 4);
-    console.log(response);
+    // console.log(response);
 	this.datatypesAndValues = {};
 	this.measurementsAndDescriptions = {};
 	this.datesAndValues = [];
@@ -152,7 +151,7 @@ function WeatherResponse(response) {
 		date = date.substring(0, 10);
 		value = response.responseJSON.results[i].value;
 		this.datesAndValues.push([date, value]);
-		}
+	}
 }
 
 
@@ -166,17 +165,6 @@ function WeatherResponse(response) {
  * Output data to HTML *
  ***********************/
  
-function tempHighResponseNormal(response, index) {
-	singleTemperature[index] = new WeatherResponse(response);
-	temp = singleTemperature[index].datatypesAndValues.TMAX;
-	console.log('Hello World 2');
-	console.log('Temperature: ' + temp);
-	console.log('Index: ' + index);
-	TempArray[index] = temp;
-	console.log('Temerature list: ' + TempArray);
-    $('#output').html(JSON.stringify(TempArray	, null, 4));
-}
-
 function tempHighResponse0(response, DayNumber) {
 	singleTemperature[DayNumber] = new WeatherResponse(response);
 	temp = singleTemperature[DayNumber].datatypesAndValues.TMAX;
@@ -191,11 +179,7 @@ function tempHighResponse0(response, DayNumber) {
 function tempHighResponse1(response, day) {
 	singleTemperature[day] = new WeatherResponse(response);
 	temp = singleTemperature[day].datatypesAndValues.TMAX;
-	console.log('Hello World 3');
-	console.log('Temperature: ' + temp);
-	console.log('Index: ' + day);
 	TempArray[day] = temp;
-	console.log('Temerature list: ' + TempArray);
     $('#output').html('List of temperatures:<br>' + JSON.stringify(TempArray, null, 4));
 }
  
@@ -210,11 +194,7 @@ function tempHighResponseOld(response, index) {
         datatypesAndValues[datatype] = value;
 	}
 	temp = datatypesAndValues.TMAX;
-	console.log('Hello World 2');
-	console.log('Temperature: ' + temp);
-	console.log('Index: ' + index);
 	TempArray[index] = temp;
-	console.log('Temerature list: ' + TempArray);
 }
 
 // Format and output weather data from AJAX response
@@ -228,23 +208,23 @@ function ajaxResponse(response) {
 }
 
 // bookmark
-function getHighsNoLoopResponse(response) {
-	var date, value, JSON2Table = [];
+function getHighsNoLoopResponse(response, year, j) {
+	var date, value, JSON2TextTable = '';
 	var multiTemp = new WeatherResponse(response);
-	console.log(multiTemp);
-	
+	// console.log(multiTemp);
 	
 	for (i=0;i<multiTemp.datesAndValues.length;i++) {
+		dateRange.start.year = year + j;
+		dateRange.end.year = year + j + 1;
 		date = multiTemp.datesAndValues[i][0];
 		value = multiTemp.datesAndValues[i][1];
-		JSON2Table.push('<br>' + date + '&nbsp;&nbsp;&nbsp;&nbsp;' + value);
+		multiyearValues[i] = [];
+		multiyearValues[i][j] = value;
+        JSON2TextTable = JSON2TextTable + date + '&nbsp;&nbsp;&nbsp;&nbsp;' + value + '<br>';
 	}
-
-	
-	console.log('listOfDates:<br>' + multiTemp.datesAndValues);
-  	$('#output').html('listOfDates:<br>' + JSON2Table);	
-	
-	
+	console.log(dateRange.end.year);
+    console.log(multiyearValues[0][0] + ',' + multiyearValues[0][1] + ',' + multiyearValues[0][2]);
+  	$('#output').html('Daily temperature highs:<br>' + JSON2TextTable);	
 }
 
 
@@ -345,19 +325,29 @@ function getData() {
 }
 
 // get data
-function getHighsNoLoop() {
+function getHighsNoLoop(year, j) {
 	urlOutput = buildUrlRangeOfDays();
     $.ajax({
         url: urlOutput,
         headers: {token: urlAndToken.token},
         complete: function (response) {
-            getHighsNoLoopResponse(response);
+            getHighsNoLoopResponse(response, year, j);
         },
         error: function (response) {
-            getHighsNoLoopResponse(response);
+            getHighsNoLoopResponse(response, year, j);
         }
     });
 }
+
+//bookmark
+function multiYear(year) {
+	var j;
+	for (j=0;j<=3;j++) {
+		// console.log(dateRange.end.year);
+		getHighsNoLoop(year, j);
+	}
+}
+
 
 // Get available data types
 function getAvailableDataTypes() {
@@ -402,7 +392,7 @@ $.each(listOfDates, function(index, value) {
 });
 */
 
-getHighsNoLoop();
+multiYear(2008);
 // getData();4
 // getAvailableDataTypes();
 });
