@@ -21,7 +21,14 @@ var urlAndToken = {},
 	multiyearValues = [],
 	multiTemp = {},
 	locations = {},
-	stations = {};
+	stations = {},
+	JSON2HtmlTableValues = '<table>',
+	JSON2HtmlTableDates = '<table>',
+	JSONchart4excelDates = [],
+	JSONchart4excelValues = [];
+
+
+
 
 
 // document.getElementById('token')
@@ -230,29 +237,29 @@ function ajaxResponse(response) {
 }
 
 // bookmark
-function getHighsNoLoopResponse(response, year, j) {
-	var date, value;
-	var JSON2HtmlTable = '';
-
+function getHighsNoLoopResponse(response, j) {
+	var i, winter, date, value, columns;
 	multiTemp = new WeatherResponse(response);
-	// console.log(multiTemp);
-	
-	JSON2HtmlTable = '<table>';
+
+	console.log(window.JSONchart4excelValues);
+
+	// Create block of html data
 	for (i=0;i<multiTemp.datesAndValues.length;i++) {
-		dateRangeInput.start.year = year + j;
-		dateRangeInput.end.year = year + j + 1;
+		// dateRangeInput.start.year = year + j;
+		// dateRangeInput.end.year = year + j + 1;
+		winter = multiTemp.datesAndValues[0][0].substr(0,4);
 		date = multiTemp.datesAndValues[i][0];
 		value = multiTemp.datesAndValues[i][1];
-        JSON2HtmlTable = JSON2HtmlTable + '<tr><td>' + date + '<td>' + value + '</tr>';
+		JSONchart4excelDates[i] = [];
+		JSONchart4excelValues[i] = [];
+		columns = window.JSONchart4excelDates[0].length; // gives 0 at first
+		JSONchart4excelDates[i][j] = date;
+		JSONchart4excelValues[i][j] = value;
+        // JSON2HtmlTable = JSON2HtmlTable + '<tr><td>' + date + '<td>' + value + '</tr>';
 	}
-	JSON2HtmlTable = JSON2HtmlTable + '</table>';
-	console.log(dateRangeInput.end.year);
-  	$('#output').html('Daily temperature highs:<br>' + JSON2HtmlTable);
+	// JSON2HtmlTable = JSON2HtmlTable + '</table>';	
+  	// $('#output').html('Daily temperature highs:<br>' + JSON2HtmlTableValues);
 }
-
-
-
-	
 	
 	
 	
@@ -359,15 +366,15 @@ function getHighsNoLoop(year, j) {
         url: urlOutput,
         headers: {token: urlAndToken.token},
         complete: function (response) {
-            getHighsNoLoopResponse(response, year, j);
+            getHighsNoLoopResponse(response, j);
         },
         error: function (response) {
-            getHighsNoLoopResponse(response, year, j);
+            getHighsNoLoopResponse(response, j);
         }
     });
 }
 
-//bookmark
+//unused
 function multiYear(year) {
 	var j;
 	for (j=0;j<=3;j++) {
@@ -406,26 +413,19 @@ response = requests.get(url, headers = headers)
     });
 }
 
-
-function plotlyChartTest() {
-	var x = [],
-	y = [],
-	z = [],
-	data = [];
-	
-	data = [{
-		x: [0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9],
-		y: [0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9],
-		z: [0.9,0.9,0.5,0.9,0.2,0.6,0.5,0.2,0.9,0,0.7,0.3,0.1,0.1,1,0.2,0.3,0.5,0.9,0.3,0.7,0.9,0.1,0.7,0.3,0.3,0.5,0.9,0.6,0.4,0.7,0.2,0.3,0.7,0.5,0,0.1,0.6,0.6,0.3,0.6,0.9,0.5,0.9,0.9,0,0.9,0.5,0.6,0.8,0.9,0.6,0.5,0.5,0.4,0.7,0.1,1,0.9,0.2,0.7,0.7,0.2,0.8,0,0.4,0.6,0,0.2,0.5,0.9,0.8,0.6,0.4,0,0.6,0.8,0.3,0.5,0.9,0.6,0.1,0.2,0.9,0.1,0.8,1,0.1,0.3,0.8,0.5,0.2,0.3,0.1,0.3,1,0.4,0.4,0.1,0],
-		type: 'contour'
-	}];
-
-	Plotly.newPlot('tester', data);	
-}
-
+// This is a test to see how global variables are affected
+// when they are modified from inside jquery functions
+var helloworld = [0];
+$(function () {
+	helloworld[1] = 1;
+	helloworld[2] = 2;
+	console.log('inside: ' + helloworld);
+});
+console.log('outside: ' + helloworld);
 
 // Launch app
 $(function () {
+
 
 /*
 $.each(listOfDates(), function(index, value) {
@@ -435,14 +435,50 @@ $.each(listOfDates(), function(index, value) {
 });
 */
 
-multiYear(2015);
-window.setTimeout(function () {
-	    multiYear(2016);
-		plotlyChartTest();
-}, 20000);
-
 // getData();4
 // getAvailableDataTypes();
+
+/* 
+getHighsNoLoop(2008, 0);
+window.setTimeout(function () { getHighsNoLoop(2009, 1); },  10000);
+window.setTimeout(function () { getHighsNoLoop(2010, 2); },  20000);
+window.setTimeout(function () { getHighsNoLoop(2011, 3); },  30000);
+window.setTimeout(function () { getHighsNoLoop(2012, 4); },  40000);
+window.setTimeout(function () { getHighsNoLoop(2013, 5); },  50000);
+window.setTimeout(function () { getHighsNoLoop(2014, 6); },  60000);
+window.setTimeout(function () { getHighsNoLoop(2015, 7); },  70000);
+window.setTimeout(function () { getHighsNoLoop(2016, 8); },  80000);
+window.setTimeout(function () { getHighsNoLoop(2017, 9); },  90000);
+window.setTimeout(function () { getHighsNoLoop(2018, 10); }, 100000);
+window.setTimeout(function () { getHighsNoLoop(2019, 11); }, 110000);
+window.setTimeout(function () { plotlyChart();   }, 120000);
+window.setTimeout(function () { plotlyChartTest(); }, 120000);
+window.setTimeout(function () { 
+	var table = arrayToTable(JSONchart4excelValues, {
+		thead: false,
+		attrs: {class: 'table'}
+	})
+	$('#output').append(table);
+}, 130000);
+ */
+
+function y2008() {
+	return new Promise(function(resolve, reject) {
+		getHighsNoLoop(2008, 0);
+	})
+}
+
+function y2009(y2008) {
+	$.ajax({
+		success: function(response) {
+			getHighsNoLoop(2009, 1);
+		}
+	});
+}
+
+plotlyChartTest();
+
+
 });
 
 
