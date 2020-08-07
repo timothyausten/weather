@@ -19,6 +19,7 @@ var urlAndToken = {},
 	urlOutput,
 	singleTemperature = [],
 	multiyearValues = [],
+	multiTemp = {},
 	locations = {},
 	stations = {};
 
@@ -232,7 +233,8 @@ function ajaxResponse(response) {
 function getHighsNoLoopResponse(response, year, j) {
 	var date, value;
 	var JSON2HtmlTable = '';
-	var multiTemp = new WeatherResponse(response);
+
+	multiTemp = new WeatherResponse(response);
 	// console.log(multiTemp);
 	
 	JSON2HtmlTable = '<table>';
@@ -245,11 +247,11 @@ function getHighsNoLoopResponse(response, year, j) {
 	}
 	JSON2HtmlTable = JSON2HtmlTable + '</table>';
 	console.log(dateRangeInput.end.year);
-  	$('#output').html('Daily temperature highs:<br>' + JSON2HtmlTable);	
+  	$('#output').html('Daily temperature highs:<br>' + JSON2HtmlTable);
 }
 
 
-	
+
 	
 	
 	
@@ -405,6 +407,21 @@ response = requests.get(url, headers = headers)
 }
 
 
+function plotlyChartTest() {
+	var x = [],
+	y = [],
+	z = [],
+	data = [];
+	
+	data = [{
+		x: [0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9],
+		y: [0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9],
+		z: [0.9,0.9,0.5,0.9,0.2,0.6,0.5,0.2,0.9,0,0.7,0.3,0.1,0.1,1,0.2,0.3,0.5,0.9,0.3,0.7,0.9,0.1,0.7,0.3,0.3,0.5,0.9,0.6,0.4,0.7,0.2,0.3,0.7,0.5,0,0.1,0.6,0.6,0.3,0.6,0.9,0.5,0.9,0.9,0,0.9,0.5,0.6,0.8,0.9,0.6,0.5,0.5,0.4,0.7,0.1,1,0.9,0.2,0.7,0.7,0.2,0.8,0,0.4,0.6,0,0.2,0.5,0.9,0.8,0.6,0.4,0,0.6,0.8,0.3,0.5,0.9,0.6,0.1,0.2,0.9,0.1,0.8,1,0.1,0.3,0.8,0.5,0.2,0.3,0.1,0.3,1,0.4,0.4,0.1,0],
+		type: 'contour'
+	}];
+
+	Plotly.newPlot('tester', data);	
+}
 
 
 // Launch app
@@ -419,9 +436,17 @@ $.each(listOfDates(), function(index, value) {
 */
 
 multiYear(2015);
+window.setTimeout(function () {
+	    multiYear(2016);
+		plotlyChartTest();
+}, 20000);
+
 // getData();4
 // getAvailableDataTypes();
 });
+
+
+
 
 
 
