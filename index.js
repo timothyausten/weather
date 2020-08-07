@@ -19,7 +19,9 @@ var urlAndToken = {},
 	TempArray = [],
 	urlOutput,
 	singleTemperature = [],
-	multiyearValues = [];
+	multiyearValues = [],
+	locations = {},
+	stations = {};
 
 
 // document.getElementById('token')
@@ -58,33 +60,6 @@ for (d = dateStart; d <= dateEnd; d.setDate(d.getDate() + 1)) {
 	listOfDates.push(dateFormatted);
 }
 
-
-urlParams.example = {
-    datasetid: 'GSOM',
-	locationid: 'FIPS:37',
-    units: 'standard',
-    startdate: '2010-05-01',
-    enddate: '2010-05-31'
-};
-urlParams.orchards = {
-    datasetid: 'GHCND',
-	stationid: 'GHCND:FIE00143471',
-    units: 'metric',
-    startdate: '2010-01-01',
-    enddate: '2010-03-01',
-	limit: 1000,
-	datatypeid: 'TMAX'
-};
-
-// locationid: 'GHCND:FIE00143471' (kauhajoki)
-// locationid: 'GHCND:FIE00144212' (vaasa)
-// locationid: 'GHCND:USW00024229' (pdx)
-// locationid: 'ZIP:28801' (somewhere in north carolina)
-// locationid: 'FIPS:37' (north carolina) throws errors for some reason
-// stationid: 'GHCND:USC00010008' (orchards),
-
-
-
 /*
 Available datasets
     "GHCND": "Daily Summaries",
@@ -100,11 +75,41 @@ Available datasets
     "PRECIP_HLY": "Precipitation Hourly"
 */
 
+locations = {
+	kauhajoki:  'GHCND:FIE00143471',
+	vaasa:      'GHCND:FIE00144212',
+	pdx:        'GHCND:USW00024229',
+	ncarolina:  'ZIP:28801', /*somewhere in n. carolina*/
+	ncarolina2: 'FIPS:37', /*north carolina, throws errors for some reason*/
+}
+
+stations = {
+   'orchards': 'GHCND:USC00010008',
+}
+
+
+urlParams.example = {
+    datasetid: 'GSOM',
+	locationid: 'FIPS:37',
+    units: 'standard',
+    startdate: '2010-05-01',
+    enddate: '2010-05-31'
+};
+urlParams.maxTempAtLocation = {
+    datasetid: 'GHCND',
+	stationid: locations.kauhajoki,
+    units: 'metric',
+    startdate: '2010-01-01',
+    enddate: '2010-03-01',
+	limit: 1000,
+	datatypeid: 'TMAX'
+};
+
 function buildUrlOneDay(date) {
     // GSOM dataset (Global Summary of the Month) for GHCND station USC00010008, for May of 2010 with standard units
     var baseUrl, params, url;
     baseUrl = urlAndToken.url;
-    params = urlParams.orchards;
+    params = urlParams.maxTempAtLocation;
 	params.startdate = date;
 	params.enddate = date;
     // Produces, for example, datasetid=GSOM&stationid=GHCND:USC00010008&units=standard&startdate=2010-05-01&enddate=2010-05-31
@@ -117,7 +122,7 @@ function buildUrlRangeOfDays() {
     // GSOM dataset (Global Summary of the Month) for GHCND station USC00010008, for May of 2010 with standard units
     var baseUrl, params, url;
     baseUrl = urlAndToken.url;
-    params = urlParams.orchards;
+    params = urlParams.maxTempAtLocation;
 	params.startdate = dateStartString;
 	params.enddate = dateEndString;
     // Produces, for example, datasetid=GSOM&stationid=GHCND:USC00010008&units=standard&startdate=2010-05-01&enddate=2010-05-31
@@ -209,19 +214,22 @@ function ajaxResponse(response) {
 
 // bookmark
 function getHighsNoLoopResponse(response, year, j) {
-	var date, value, JSON2TextTable = '';
+	var date, value;
+	var JSON2HtmlTable = '';
 	var multiTemp = new WeatherResponse(response);
 	// console.log(multiTemp);
 	
+	JSON2HtmlTable = '<table>';
 	for (i=0;i<multiTemp.datesAndValues.length;i++) {
 		dateRange.start.year = year + j;
 		dateRange.end.year = year + j + 1;
 		date = multiTemp.datesAndValues[i][0];
 		value = multiTemp.datesAndValues[i][1];
-        JSON2TextTable = JSON2TextTable + date + '&nbsp;&nbsp;&nbsp;&nbsp;' + value + '<br>';
+        JSON2HtmlTable = JSON2HtmlTable + '<tr><td>' + date + '<td>' + value + '</tr>';
 	}
+	JSON2HtmlTable = JSON2HtmlTable + '</table>';
 	console.log(dateRange.end.year);
-  	$('#output').html('Daily temperature highs:<br>' + JSON2TextTable);	
+  	$('#output').html('Daily temperature highs:<br>' + JSON2HtmlTable);	
 }
 
 
@@ -389,6 +397,8 @@ $.each(listOfDates, function(index, value) {
 });
 */
 
+dateRange.start.year = 2009;
+dateRange.end.year = 2010;
 multiYear(2008);
 // getData();4
 // getAvailableDataTypes();
