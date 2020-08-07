@@ -5,12 +5,11 @@
 
 var urlAndToken = {},
     urlParams = {},
+	dateRangeInput = {},
+	dateRangeTest = {},
 	dateRange = {},
-    listOfDates = [],
-	dateStart,
-	dateEnd,
-	dateStartString,
-	dateEndString,
+	dateStart = [],
+	dateEnd = [],
 	d = [],
 	n,
 	day,
@@ -32,10 +31,10 @@ urlAndToken = {
 }
 
 
-dateRange = {
+dateRangeInput = {
 	start: {
 		year: 2008,
-		month: 11,
+		month: 3,
 		day: 1
 	}, end: {
 		year: 2009,
@@ -46,18 +45,33 @@ dateRange = {
 
 
 
-// Subtract 1 from the input value for month because
-// year and day numbering start at 1,
-// but month numbering starts at 0. 
-dateStart = new Date(dateRange.start.year, dateRange.start.month - 1, dateRange.start.day + 1);
-dateEnd = new Date(dateRange.end.year, dateRange.end.month - 1, dateRange.end.day + 1);
-dateStartString = dateStart.toISOString().substring(0, 10)
-dateEndString = dateEnd.toISOString().substring(0, 10)
+function dateRangeConstructor(year) {
+    // Subtract 1 from the input value for month because
+    // year and day numbering start at 1,
+    // but month numbering starts at 0. 
+	var start = new Date(year, dateRangeInput.start.month - 1, dateRangeInput.start.day + 1);
+	var end = new Date(year + 1, dateRangeInput.start.month - 1, dateRangeInput.start.day);
+	this.start = start;
+	this.end = end;
+	this.startString = start.toISOString().substring(0, 10);
+	this.endString = end.toISOString().substring(0, 10);
+}
 
-// Build a list of dates in ISO format
-for (d = dateStart; d <= dateEnd; d.setDate(d.getDate() + 1)) {
-    dateFormatted = d.toISOString().substring(0, 10);
-	listOfDates.push(dateFormatted);
+// dateRangeTest = new dateRangeConstructor(2015);
+// console.log('start: ' + dateRangeTest.startString);
+// console.log('end: ' + dateRangeTest.endString);
+
+// dateEndString = dateEnd.toISOString().substring(0, 10)
+
+function listOfDates() {
+	// Build a list of dates in ISO format
+	var list;
+	var dateRange = new dateRangeConstructor(year);
+	for (d = dateRange.start; d <= dateRange.end; d.setDate(d.getDate() + 1)) {
+		dateFormatted = d.toISOString().substring(0, 10);
+		list.push(dateFormatted);
+	}
+	return list;
 }
 
 /*
@@ -118,13 +132,15 @@ function buildUrlOneDay(date) {
     return url;
 }
 
-function buildUrlRangeOfDays() {
+function buildUrlRangeOfDays(year) {
     // GSOM dataset (Global Summary of the Month) for GHCND station USC00010008, for May of 2010 with standard units
     var baseUrl, params, url;
+	var d = [];
     baseUrl = urlAndToken.url;
     params = urlParams.maxTempAtLocation;
-	params.startdate = dateStartString;
-	params.enddate = dateEndString;
+	d = new dateRangeConstructor(year);
+	params.startdate = d.startString;
+	params.enddate = d.endString;
     // Produces, for example, datasetid=GSOM&stationid=GHCND:USC00010008&units=standard&startdate=2010-05-01&enddate=2010-05-31
     params = $.param(params);
     url = baseUrl + params;
@@ -221,14 +237,14 @@ function getHighsNoLoopResponse(response, year, j) {
 	
 	JSON2HtmlTable = '<table>';
 	for (i=0;i<multiTemp.datesAndValues.length;i++) {
-		dateRange.start.year = year + j;
-		dateRange.end.year = year + j + 1;
+		dateRangeInput.start.year = year + j;
+		dateRangeInput.end.year = year + j + 1;
 		date = multiTemp.datesAndValues[i][0];
 		value = multiTemp.datesAndValues[i][1];
         JSON2HtmlTable = JSON2HtmlTable + '<tr><td>' + date + '<td>' + value + '</tr>';
 	}
 	JSON2HtmlTable = JSON2HtmlTable + '</table>';
-	console.log(dateRange.end.year);
+	console.log(dateRangeInput.end.year);
   	$('#output').html('Daily temperature highs:<br>' + JSON2HtmlTable);	
 }
 
@@ -256,7 +272,8 @@ function dataTypeResponse(response) {
 
 
 function getHighs0(day) {
-	date = listOfDates[day];
+	var date, urlOutput;
+	date = listOfDates()[day];
 	console.log('Date: ' + date);
 	console.log('DayNumber: ' + day);
 	console.log('Date: ' + date);
@@ -276,8 +293,9 @@ function getHighs0(day) {
 }
 
 function getHighs1(day) {
-	var DayNumber = day;
-	date = listOfDates[day];
+	var DayNumber, date, urlOutput;
+	DayNumber = day;
+	date = listOfDates()[day];
 	console.log('Date: ' + date);
 	console.log('DayNumber: ' + day);
 	urlOutput = buildUrlOneDay(date);
@@ -294,7 +312,8 @@ function getHighs1(day) {
 }
 
 function getHighs(day) {
-	date = listOfDates[day];
+	var date, urlOutput;
+	date = listOfDates()[day];
 	console.log('Date: ' + date);
 	console.log('DayNumber: ' + day);
 	console.log('Date: ' + date);
@@ -316,7 +335,8 @@ function getHighs(day) {
 
 // get data
 function getData() {
-	urlOutput = buildUrlRangeOfDays();
+    var urlOutput;
+    urlOutput = buildUrlRangeOfDays();
     $.ajax({
         url: urlOutput,
         headers: {token: urlAndToken.token},
@@ -331,7 +351,8 @@ function getData() {
 
 // get data
 function getHighsNoLoop(year, j) {
-	urlOutput = buildUrlRangeOfDays();
+	var urlOutput;
+	urlOutput = buildUrlRangeOfDays(year);
     $.ajax({
         url: urlOutput,
         headers: {token: urlAndToken.token},
@@ -348,7 +369,7 @@ function getHighsNoLoop(year, j) {
 function multiYear(year) {
 	var j;
 	for (j=0;j<=3;j++) {
-		// console.log(dateRange.end.year);
+		// console.log(dateRangeInput.end.year);
 		getHighsNoLoop(year, j);
 	}
 }
@@ -390,16 +411,14 @@ response = requests.get(url, headers = headers)
 $(function () {
 
 /*
-$.each(listOfDates, function(index, value) {
+$.each(listOfDates(), function(index, value) {
 	setTimeout(function() {
 		getHighs(index);
 	}, index*400);
 });
 */
 
-dateRange.start.year = 2009;
-dateRange.end.year = 2010;
-multiYear(2008);
+multiYear(2015);
 // getData();4
 // getAvailableDataTypes();
 });
