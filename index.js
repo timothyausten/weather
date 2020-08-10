@@ -24,8 +24,10 @@ var urlAndToken = {},
 	stations = {},
 	JSON2HtmlTableValues = '<table>',
 	JSON2HtmlTableDates = '<table>',
-	JSONchart4excelDates = [],
-	JSONchart4excelValues = [];
+	compiledData = {};
+
+	compiledData.date = [];
+	compiledData.value = [];
 
 
 
@@ -237,26 +239,24 @@ function ajaxResponse(response) {
 }
 
 // bookmark
-function getHighsNoLoopResponse(response, j) {
-	var i, winter, date, value, columns;
+function getHighsResponse(response, row, compiledData) {
+	var i, winter, date, value;
 	multiTemp = new WeatherResponse(response);
 
-	console.log(window.JSONchart4excelValues);
-
-	// Create block of html data
+	compiledData.date[row] = [];
+	compiledData.value[row] = [];
+// Create block of html data
 	for (i=0;i<multiTemp.datesAndValues.length;i++) {
 		// dateRangeInput.start.year = year + j;
 		// dateRangeInput.end.year = year + j + 1;
 		winter = multiTemp.datesAndValues[0][0].substr(0,4);
 		date = multiTemp.datesAndValues[i][0];
 		value = multiTemp.datesAndValues[i][1];
-		JSONchart4excelDates[i] = [];
-		JSONchart4excelValues[i] = [];
-		columns = window.JSONchart4excelDates[0].length; // gives 0 at first
-		JSONchart4excelDates[i][j] = date;
-		JSONchart4excelValues[i][j] = value;
+		compiledData.date[row][i] = date;
+		compiledData.value[row][i] = value;
         // JSON2HtmlTable = JSON2HtmlTable + '<tr><td>' + date + '<td>' + value + '</tr>';
 	}
+	console.log(compiledData.value[row].toString());
 	// JSON2HtmlTable = JSON2HtmlTable + '</table>';	
   	// $('#output').html('Daily temperature highs:<br>' + JSON2HtmlTableValues);
 }
@@ -320,7 +320,7 @@ function getHighs1(day) {
 	});
 }
 
-function getHighs(day) {
+function getHighsJustOne(day) {
 	var date, urlOutput;
 	date = listOfDates()[day];
 	console.log('Date: ' + date);
@@ -359,28 +359,37 @@ function getData() {
 }
 
 // get data
-function getHighsNoLoop(year, j) {
+function getHighsAgain(year, row, compiledData) {
 	var urlOutput;
 	urlOutput = buildUrlRangeOfDays(year);
     $.ajax({
         url: urlOutput,
         headers: {token: urlAndToken.token},
         complete: function (response) {
-            getHighsNoLoopResponse(response, j);
+			getHighsResponse(response, row, compiledData);
         },
         error: function (response) {
-            getHighsNoLoopResponse(response, j);
+			compiledData = getHighsResponse(response, row, compiledData);
         }
-    });
+	});
 }
-
-//unused
-function multiYear(year) {
-	var j;
-	for (j=0;j<=3;j++) {
-		// console.log(dateRangeInput.end.year);
-		getHighsNoLoop(year, j);
-	}
+// get data
+function getHighs(year, row, compiledData) {
+	var urlOutput;
+	urlOutput = buildUrlRangeOfDays(year);
+    $.ajax({
+        url: urlOutput,
+        headers: {token: urlAndToken.token},
+        complete: function (response) {
+			getHighsResponse(response, row, compiledData);
+			year++;
+			row++;
+			getHighsAgain(year, row, compiledData);
+        },
+        error: function (response) {
+			compiledData = getHighsResponse(response, row, compiledData);
+        }
+	});
 }
 
 
@@ -430,7 +439,7 @@ $(function () {
 /*
 $.each(listOfDates(), function(index, value) {
 	setTimeout(function() {
-		getHighs(index);
+		date(index);
 	}, index*400);
 });
 */
@@ -439,22 +448,22 @@ $.each(listOfDates(), function(index, value) {
 // getAvailableDataTypes();
 
 /* 
-getHighsNoLoop(2008, 0);
-window.setTimeout(function () { getHighsNoLoop(2009, 1); },  10000);
-window.setTimeout(function () { getHighsNoLoop(2010, 2); },  20000);
-window.setTimeout(function () { getHighsNoLoop(2011, 3); },  30000);
-window.setTimeout(function () { getHighsNoLoop(2012, 4); },  40000);
-window.setTimeout(function () { getHighsNoLoop(2013, 5); },  50000);
-window.setTimeout(function () { getHighsNoLoop(2014, 6); },  60000);
-window.setTimeout(function () { getHighsNoLoop(2015, 7); },  70000);
-window.setTimeout(function () { getHighsNoLoop(2016, 8); },  80000);
-window.setTimeout(function () { getHighsNoLoop(2017, 9); },  90000);
-window.setTimeout(function () { getHighsNoLoop(2018, 10); }, 100000);
-window.setTimeout(function () { getHighsNoLoop(2019, 11); }, 110000);
+getHighs(2008, 0);
+window.setTimeout(function () { getHighs(2009, 1); },  10000);
+window.setTimeout(function () { getHighs(2010, 2); },  20000);
+window.setTimeout(function () { getHighs(2011, 3); },  30000);
+window.setTimeout(function () { getHighs(2012, 4); },  40000);
+window.setTimeout(function () { getHighs(2013, 5); },  50000);
+window.setTimeout(function () { getHighs(2014, 6); },  60000);
+window.setTimeout(function () { getHighs(2015, 7); },  70000);
+window.setTimeout(function () { getHighs(2016, 8); },  80000);
+window.setTimeout(function () { getHighs(2017, 9); },  90000);
+window.setTimeout(function () { getHighs(2018, 10); }, 100000);
+window.setTimeout(function () { getHighs(2019, 11); }, 110000);
 window.setTimeout(function () { plotlyChart();   }, 120000);
 window.setTimeout(function () { plotlyChartTest(); }, 120000);
 window.setTimeout(function () { 
-	var table = arrayToTable(JSONchart4excelValues, {
+	var table = arrayToTable(compiledData.value, {
 		thead: false,
 		attrs: {class: 'table'}
 	})
@@ -463,18 +472,10 @@ window.setTimeout(function () {
  */
 
 function y2008() {
-	return new Promise(function(resolve, reject) {
-		getHighsNoLoop(2008, 0);
-	})
+	getHighs(2008, 0, compiledData);
 }
+y2008();
 
-function y2009(y2008) {
-	$.ajax({
-		success: function(response) {
-			getHighsNoLoop(2009, 1);
-		}
-	});
-}
 
 plotlyChartTest();
 
