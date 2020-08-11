@@ -1,22 +1,34 @@
 
 
-function plotlyChart() {
+function plotlyChart(a, firstyear) {
 	var x = [],
 	y = [],
 	z = [],
+	i, j,
+	accum = 0, // accumulated number of records
 	data = [],
-	date = [];
-			
-	for (i=0; i<multiTemp.datesAndValues.length; i++) {
-		date = new Date(multiTemp.datesAndValues[i][0]);
-		
-		if (date.getMonth < 4) {
-			date.setFullYear(date.getFullYear - 1);
+	recordNum = [],
+	recordYear = [];
+
+	for(i=0; i<a.length; i++) {
+		recordNum[i] = [];
+		recordYear[i] = [];
+		console.log('accum: ' + accum)
+		for(j=0; j<a[i].length; j++) {
+			// Assign record number to each value
+			recordNum[i][j] = accum + j;
+			recordYear[i][j] = firstyear + i;
 		}
-		
-		x[i] = i; // Place temps in order by date
-		y[i] = multiTemp.datesAndValues[i][0].substr(0,4); // Year
-		z[i] = multiTemp.datesAndValues[i][1]; // Temperature
+		// Combine array elements into single array
+		accum = accum + a[i].length;
+		x = recordNum[i].concat(recordNum[i + 1]);
+		y = recordYear[i].concat(recordYear[i + 1]);
+	}
+
+	console.log('x: ' + x);
+
+	for(i=0;i<a.length;i++) {
+		z = a[i].concat(a[i + 1]);
 	}
 
 	data = [{
@@ -26,5 +38,5 @@ function plotlyChart() {
 		type: 'contour'
 	}];
 
-	Plotly.newPlot('tester', data);	
+	Plotly.newPlot('contourchart', data);	
 }

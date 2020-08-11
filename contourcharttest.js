@@ -34,4 +34,3 @@ var matrixTall = matrixWide[0].map(function (col, c) {
         return matrixWide[r][c]; 
     }); 
 });
-console.log(matrixTall);

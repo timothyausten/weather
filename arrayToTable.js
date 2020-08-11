@@ -10,10 +10,10 @@ var arrayToTable = function (data, options) {
         i,
         j,
         defaults = {
-            th: true, // should we use th elemenst for the first row
-            thead: false, //should we incldue a thead element with the first row
-            tfoot: false, // should we include a tfoot element with the last row
-            attrs: {} // attributes for the table element, can be used to
+            th: true, // Use th element for first row
+            thead: false, // Incldue a thead element with the first row
+            tfoot: false, // Include a tfoot element with the last row
+            attrs: {} // Attributes for the table element
         };
 
     options = $.extend(defaults, options);

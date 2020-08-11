@@ -84,6 +84,9 @@ function listOfDates() {
 	return list;
 }
 
+
+
+
 /*
 Available datasets
     "GHCND": "Daily Summaries",
@@ -243,12 +246,10 @@ function getHighsResponse(response, row, compiledData) {
 	var i, winter, date, value;
 	multiTemp = new WeatherResponse(response);
 
+	// Create block of html data
 	compiledData.date[row] = [];
 	compiledData.value[row] = [];
-// Create block of html data
 	for (i=0;i<multiTemp.datesAndValues.length;i++) {
-		// dateRangeInput.start.year = year + j;
-		// dateRangeInput.end.year = year + j + 1;
 		winter = multiTemp.datesAndValues[0][0].substr(0,4);
 		date = multiTemp.datesAndValues[i][0];
 		value = multiTemp.datesAndValues[i][1];
@@ -256,7 +257,6 @@ function getHighsResponse(response, row, compiledData) {
 		compiledData.value[row][i] = value;
         // JSON2HtmlTable = JSON2HtmlTable + '<tr><td>' + date + '<td>' + value + '</tr>';
 	}
-	console.log(compiledData.value[row].toString());
 	// JSON2HtmlTable = JSON2HtmlTable + '</table>';	
   	// $('#output').html('Daily temperature highs:<br>' + JSON2HtmlTableValues);
 }
@@ -359,35 +359,37 @@ function getData() {
 }
 
 // get data
-function getHighsAgain(year, row, compiledData) {
-	var urlOutput;
+function getHighs(year, firstyear, finalyear, row, compiledData) {
+	var urlOutput, chartTall, excelTable;
 	urlOutput = buildUrlRangeOfDays(year);
     $.ajax({
         url: urlOutput,
         headers: {token: urlAndToken.token},
         complete: function (response) {
-			getHighsResponse(response, row, compiledData);
-        },
+			var i, plotlyData = {};
+			getHighsResponse(response, row, compiledData); // Process data
+			if (year === finalyear) {
+				console.log('Years:' + year + ', ' + finalyear);
+				console.log('Year is final year: ' + (year === finalyear));
+				console.log(compiledData);
+				chartTall = transposeArray(compiledData.value);
+				// console.log('Transposed chart:' + chartTall);
+				excelTable = arrayToTable(chartTall, {
+						thead: false
+				});
+				$('#exceltable').html(excelTable);
+				plotlyChart(compiledData.value, firstyear);
+			}
+			while (year < finalyear) {
+				setTimeout(
+					getHighs(year, firstyear, finalyear, row, compiledData) // Query server again
+				, 1000);
+				year++;
+				row++;
+			}
+	},
         error: function (response) {
-			compiledData = getHighsResponse(response, row, compiledData);
-        }
-	});
-}
-// get data
-function getHighs(year, row, compiledData) {
-	var urlOutput;
-	urlOutput = buildUrlRangeOfDays(year);
-    $.ajax({
-        url: urlOutput,
-        headers: {token: urlAndToken.token},
-        complete: function (response) {
-			getHighsResponse(response, row, compiledData);
-			year++;
-			row++;
-			getHighsAgain(year, row, compiledData);
-        },
-        error: function (response) {
-			compiledData = getHighsResponse(response, row, compiledData);
+			console.log('Server error');
         }
 	});
 }
@@ -399,7 +401,7 @@ function getAvailableDataTypes() {
 	everywhereGSOM = 'https://www.ncdc.noaa.gov/cdo-web/api/v2/datatypes?datasetid=GSOM',
 	everywhereGHCND = 'https://www.ncdc.noaa.gov/cdo-web/api/v2/datatypes?datasetid=GHCND',
 	dataSetsWithTemp = 'https://www.ncdc.noaa.gov/cdo-web/api/v2/datasets?datatypeid=LTMN',
-	dataSetsAll = 'https://www.ncdc.noaa.gov/cdo-web/api/v2/datasets'
+	dataSetsAll = 'https://www.ncdc.noaa.gov/cdo-web/api/v2/datasets',
 	tmax = 'https://www.ncdc.noaa.gov/cdo-web/api/v2/datatypes/TMAX',
 	dataTypesTemp = 'https://www.ncdc.noaa.gov/cdo-web/api/v2/datatypes?datacategoryid=TEMP&limit=200';
 
@@ -422,15 +424,6 @@ response = requests.get(url, headers = headers)
     });
 }
 
-// This is a test to see how global variables are affected
-// when they are modified from inside jquery functions
-var helloworld = [0];
-$(function () {
-	helloworld[1] = 1;
-	helloworld[2] = 2;
-	console.log('inside: ' + helloworld);
-});
-console.log('outside: ' + helloworld);
 
 // Launch app
 $(function () {
@@ -447,37 +440,13 @@ $.each(listOfDates(), function(index, value) {
 // getData();4
 // getAvailableDataTypes();
 
-/* 
-getHighs(2008, 0);
-window.setTimeout(function () { getHighs(2009, 1); },  10000);
-window.setTimeout(function () { getHighs(2010, 2); },  20000);
-window.setTimeout(function () { getHighs(2011, 3); },  30000);
-window.setTimeout(function () { getHighs(2012, 4); },  40000);
-window.setTimeout(function () { getHighs(2013, 5); },  50000);
-window.setTimeout(function () { getHighs(2014, 6); },  60000);
-window.setTimeout(function () { getHighs(2015, 7); },  70000);
-window.setTimeout(function () { getHighs(2016, 8); },  80000);
-window.setTimeout(function () { getHighs(2017, 9); },  90000);
-window.setTimeout(function () { getHighs(2018, 10); }, 100000);
-window.setTimeout(function () { getHighs(2019, 11); }, 110000);
-window.setTimeout(function () { plotlyChart();   }, 120000);
-window.setTimeout(function () { plotlyChartTest(); }, 120000);
-window.setTimeout(function () { 
-	var table = arrayToTable(compiledData.value, {
-		thead: false,
-		attrs: {class: 'table'}
-	})
-	$('#output').append(table);
-}, 130000);
- */
 
 function y2008() {
-	getHighs(2008, 0, compiledData);
+	var firstyear = 2008,
+	lastyear = 2011;
+	getHighs(firstyear, firstyear, lastyear, 0, compiledData);
 }
 y2008();
-
-
-plotlyChartTest();
 
 
 });
