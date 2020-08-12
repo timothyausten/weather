@@ -1,35 +1,46 @@
-
-
 function plotlyChart(a, firstyear) {
 	var x = [],
 	y = [],
 	z = [],
-	i, j,
-	accum = 0, // accumulated number of records
-	data = [],
-	recordNum = [],
-	recordYear = [];
+	i, j;
 
-	for(i=0; i<a.length; i++) {
-		recordNum[i] = [];
-		recordYear[i] = [];
-		console.log('accum: ' + accum)
-		for(j=0; j<a[i].length; j++) {
-			// Assign record number to each value
-			recordNum[i][j] = accum + j;
-			recordYear[i][j] = firstyear + i;
+	// Assign year number to each item
+	for (i=0; i<a.length; i++) {
+		y[i] = [];
+		for (j=0; j<a[i].length; j++) {
+			y[i][j] = firstyear + i;
 		}
-		// Combine array elements into single array
-		accum = accum + a[i].length;
-		x = recordNum[i].concat(recordNum[i + 1]);
-		y = recordYear[i].concat(recordYear[i + 1]);
 	}
+
+	// Assign record number to each item
+	for (i=0; i<a.length; i++) {
+		x[i] = [];
+		for (j=0; j<a[i].length; j++) {
+			x[i][j] = j;
+		}
+	}
+
+	console.log(a);
+	// alert('Years: ' + y);
+
+	function concatSubArrays(arr) {
+		// Combine sub-arrays into single array
+		for (i=0; i<arr.length - 1; i++) {
+			arr[0] = arr[0].concat(arr[i + 1]);
+		}
+		return arr[0];
+	}
+
+	// Combine sub-arrays of record numbers into single array
+	x = concatSubArrays(x);
+	// Combine sub-arrays of year numbers into single array
+	y = concatSubArrays(y);
+	// Combine sub-arrays of values into single array
+	z = concatSubArrays(a);
+
 
 	console.log('x: ' + x);
 
-	for(i=0;i<a.length;i++) {
-		z = a[i].concat(a[i + 1]);
-	}
 
 	data = [{
 		x: x,
@@ -38,5 +49,6 @@ function plotlyChart(a, firstyear) {
 		type: 'contour'
 	}];
 
-	Plotly.newPlot('contourchart', data);	
+	Plotly.newPlot('contourchart', data);
 }
+

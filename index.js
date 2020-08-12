@@ -367,6 +367,7 @@ function getHighs(year, firstyear, finalyear, row, compiledData) {
         headers: {token: urlAndToken.token},
         complete: function (response) {
 			var i, plotlyData = {};
+			alert('Year:' + year);
 			getHighsResponse(response, row, compiledData); // Process data
 			if (year === finalyear) {
 				console.log('Years:' + year + ', ' + finalyear);
@@ -380,14 +381,12 @@ function getHighs(year, firstyear, finalyear, row, compiledData) {
 				$('#exceltable').html(excelTable);
 				plotlyChart(compiledData.value, firstyear);
 			}
-			while (year < finalyear) {
-				setTimeout(
-					getHighs(year, firstyear, finalyear, row, compiledData) // Query server again
-				, 1000);
+			if (year < finalyear) {
 				year++;
 				row++;
+				getHighs(year, firstyear, finalyear, row, compiledData); // Query server again
 			}
-	},
+},
         error: function (response) {
 			console.log('Server error');
         }
@@ -442,9 +441,10 @@ $.each(listOfDates(), function(index, value) {
 
 
 function y2008() {
-	var firstyear = 2008,
+	var year = 2008,
+	firstyear = 2008,
 	lastyear = 2011;
-	getHighs(firstyear, firstyear, lastyear, 0, compiledData);
+	getHighs(year, firstyear, lastyear, 0, compiledData);
 }
 y2008();
 
