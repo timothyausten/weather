@@ -44,7 +44,7 @@ urlAndToken = {
 dateRangeInput = {
 	start: {
 		year: 2008,
-		month: 3,
+		month: 10,
 		day: 1
 	}, end: {
 		year: 2009,
@@ -367,19 +367,19 @@ function getHighs(year, firstyear, finalyear, row, compiledData) {
         headers: {token: urlAndToken.token},
         complete: function (response) {
 			var i, plotlyData = {};
-			alert('Year:' + year);
+			$('#exceltable').html('Loading year: ' + year);
 			getHighsResponse(response, row, compiledData); // Process data
 			if (year === finalyear) {
 				console.log('Years:' + year + ', ' + finalyear);
 				console.log('Year is final year: ' + (year === finalyear));
-				console.log(compiledData);
+				console.log(compiledData.date);
 				chartTall = transposeArray(compiledData.value);
 				// console.log('Transposed chart:' + chartTall);
 				excelTable = arrayToTable(chartTall, {
 						thead: false
 				});
 				$('#exceltable').html(excelTable);
-				plotlyChart(compiledData.value, firstyear);
+				plotlyChart(compiledData.date, compiledData.value, firstyear);
 			}
 			if (year < finalyear) {
 				year++;
@@ -424,31 +424,22 @@ response = requests.get(url, headers = headers)
 }
 
 
-// Launch app
-$(function () {
+function launchapp() {
+	var year, firstyear, lastyear;
 
-
-/*
-$.each(listOfDates(), function(index, value) {
-	setTimeout(function() {
-		date(index);
-	}, index*400);
-});
-*/
-
-// getData();4
-// getAvailableDataTypes();
-
-
-function y2008() {
-	var year = 2008,
-	firstyear = 2008,
-	lastyear = 2011;
+	firstyear = document.getElementById('firstyear').value;
+	lastyear = document.getElementById('lastyear').value;
+	firstyear = firstyear*1; // Convert string to number
+	lastyear = lastyear*1; // Convert string to number
+	year = firstyear;
 	getHighs(year, firstyear, lastyear, 0, compiledData);
 }
-y2008();
 
 
+// Launch app on load
+$(function () {
+// getData();4
+// getAvailableDataTypes();
 });
 
 

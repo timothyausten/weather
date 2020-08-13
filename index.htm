@@ -13,10 +13,15 @@
     </head>
     <body>
         <h1>NCEI Historical Weather</h1>
-		<div id="contourchart"></div>
+        <form id="form">
+            First year: <input type="text" id="firstyear" name="firstyear" value="1998"><br>
+            Last year: <input type="text" id="lastyear" name="lastyear" value="2000"><br><br>
+        </form>
+        <button onclick="launchapp()">Submit</button>
+        <div id="contourchart" style="width:1000px;"></div>
 		<div id="tester" style="width:800px;height:600px;"></div>
+		<div id="progress"></div>
 		<div id="exceltable"></div>
-        <p id="output" class="pre">Waiting for server response.</p>
 
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
         <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
