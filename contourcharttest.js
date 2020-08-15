@@ -5,7 +5,8 @@ function plotlyChartTest() {
 	y = [],
 	z = [],
 	data = [],
-	date = [];
+	date = [],
+	div;
 	
 	data = [{
 		x: [0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9],
@@ -14,7 +15,9 @@ function plotlyChartTest() {
 		type: 'contour'
 	}];
 	
-	Plotly.newPlot('tester', data);	
+	div = $('<div id="tester" style="width:800px;height:600px;"></div>');
+	$('body').append(div);
+	Plotly.newPlot('tester', data);
 }
 
 

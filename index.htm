@@ -14,17 +14,18 @@
     <body>
         <h1>NCEI Historical Weather</h1>
         <form id="form">
+            Station ID: <input type="text" id="station" name="station" value="kauhajoki"><br>
             First year: <input type="text" id="firstyear" name="firstyear" value="1998"><br>
-            Last year: <input type="text" id="lastyear" name="lastyear" value="2000"><br><br>
+            Last year: <input type="text" id="lastyear" name="lastyear" value="1999"><br><br>
         </form>
         <button onclick="launchapp()">Submit</button>
-        <div id="contourchart" style="width:1000px;"></div>
-		<div id="tester" style="width:800px;height:600px;"></div>
 		<div id="progress"></div>
+        <div id="contourchart" style="width:1000px;"></div>
 		<div id="exceltable"></div>
 
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
         <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+        <script src="alasql.min.js"></script>
         <script src="arrayToTable.js"></script>
         <script src="transposearray.js"></script>
         <script src="contourchart.js"></script>

@@ -19,9 +19,9 @@ var urlAndToken = {},
 	urlOutput,
 	singleTemperature = [],
 	multiyearValues = [],
-	multiTemp = {},
 	locations = {},
 	stations = {},
+	boundingboxes = {},
 	JSON2HtmlTableValues = '<table>',
 	JSON2HtmlTableDates = '<table>',
 	compiledData = {};
@@ -36,9 +36,9 @@ var urlAndToken = {},
 // document.getElementById('token')
 
 urlAndToken = {
-    url: 'https://www.ncdc.noaa.gov/cdo-web/api/v2/data?',
-    token: 'uZXRsebTFuZXQayyYanptuRTghYsovlk',
-}
+	url: 'https://www.ncdc.noaa.gov/cdo-web/api/v2/data?',
+    token: 'uZXRsebTFuZXQayyYanptuRTghYsovlk'
+};
 
 
 dateRangeInput = {
@@ -51,7 +51,7 @@ dateRangeInput = {
 		month: 3,
 		day: 31
 	}
-}
+};
 
 
 
@@ -103,16 +103,26 @@ Available datasets
 */
 
 locations = {
-	kauhajoki:  'GHCND:FIE00143471',
-	vaasa:      'GHCND:FIE00144212',
 	pdx:        'GHCND:USW00024229',
-	ncarolina:  'ZIP:28801', /*somewhere in n. carolina*/
-	ncarolina2: 'FIPS:37', /*north carolina, throws errors for some reason*/
-}
-
+	ncarolinazip:  'ZIP:28801', /*somewhere in n. carolina*/
+	ncarolina: 'FIPS:37', /*north carolina, throws errors for some reason*/
+};
 stations = {
-   'orchards': 'GHCND:USC00010008',
-}
+   orchards:   'GHCND:USC00010008',
+   kauhajoki:  'GHCND:FIE00143471',
+   vaasa:      'GHCND:FIE00144212',
+   seinäjoki:  'GHCND:FIE00144322'
+
+};
+boundingboxes = {
+	laihia:'62.7,21.8,63,22.7',
+	bellevue: '47.5204,-122.2047,47.6139,-122.1065',
+	vaasa: '21.12,62.91,22.14,63.29',
+};
+dataSetId = {
+	gsom: 'GSOM',  /* Global Summary of the Month */
+	ghcnd: 'GHCND',  /* Global daily summaries works with kauhajoki */
+};
 
 
 urlParams.example = {
@@ -122,15 +132,33 @@ urlParams.example = {
     startdate: '2010-05-01',
     enddate: '2010-05-31'
 };
+urlParams.custom = {
+    datasetid: 'GSOM',
+	locationid: 'FIPS:37',
+    units: 'standard',
+    startdate: '2010-05-01',
+    enddate: '2010-05-31'
+};
 urlParams.maxTempAtLocation = {
-    datasetid: 'GHCND',
-	stationid: locations.kauhajoki,
+	datasetid: dataSetId.ghcnd,
+	stationid: stations.kauhajoki,
+	/* locationid: locations.ncarolina, */
     units: 'metric',
     startdate: '2010-01-01',
     enddate: '2010-03-01',
 	limit: 1000,
 	datatypeid: 'TMAX'
 };
+
+function buildUrlCustom(webpage, params) {
+    // Produces url with whatever parameters you want
+    var baseUrl, params, url;
+	baseUrl = 'https://www.ncdc.noaa.gov/cdo-web/api/v2/';
+    params = $.param(params);
+    url = baseUrl + webpage + '?' + params;
+    return url;
+}
+
 
 function buildUrlOneDay(date) {
     // GSOM dataset (Global Summary of the Month) for GHCND station USC00010008, for May of 2010 with standard units
@@ -145,45 +173,64 @@ function buildUrlOneDay(date) {
     return url;
 }
 
-function buildUrlRangeOfDays(year) {
-    // GSOM dataset (Global Summary of the Month) for GHCND station USC00010008, for May of 2010 with standard units
+function buildUrlRangeOfDays(year, station) {
+    // GHCND dataset (Global daily summaries) for GHCND station USC00010008, for May of 2010 with standard units
+    // Produces, for example, datasetid=GSOM&stationid=GHCND:USC00010008&units=standard&startdate=2010-05-01&enddate=2010-05-31
     var baseUrl, params, url;
 	var d = [];
     baseUrl = urlAndToken.url;
     params = urlParams.maxTempAtLocation;
 	d = new dateRangeConstructor(year);
+	params.stationid = station;
 	params.startdate = d.startString;
 	params.enddate = d.endString;
-    // Produces, for example, datasetid=GSOM&stationid=GHCND:USC00010008&units=standard&startdate=2010-05-01&enddate=2010-05-31
     params = $.param(params);
     url = baseUrl + params;
     return url;
 }
-// console.log(buildUrlRangeOfDays());
 
 function WeatherResponse(response) {
     var i, datatype, value, measurement, description, date, value;
-    var beautifiedJSON = JSON.stringify(response, null, 4);
-    // console.log(response);
+	var beautifiedJSON = JSON.stringify(response, null, 4);
+	var sqlStatement;
+	response = response.responseJSON.results;
+	// console.table(response);
+
+	// Truncate date to 10 characters in format yyyy-mm-dd
+	for (i=0; i<response.length; i++) {
+		response[i].date = response[i].date.substring(0,10);
+	}
+	
+	// If column name is sql keyword, then wrap it in brackets, like [value]
+	// If there is only one table in the JSON object and it has no name, then use "FROM ? AS t"
+/* 	sqlStatement = 'SELECT ' +
+		'date, ' +
+		'AVG([value]) AS [value] ' +
+		'FROM ? AS tempresults ' +
+		'GROUP BY date';
+	response = alasql(sqlStatement, [response]); */
+	// console.log(response);
+	// console.table(response);
+
 	this.datatypesAndValues = {};
 	this.measurementsAndDescriptions = {};
 	this.datesAndValues = [];
-    for (i=0;i<response.responseJSON.results.length;i++) {
+    for (i=0;i<response.length;i++) {
 		// For when the response contains information about stations, locations, and datatypes
-        datatype = response.responseJSON.results[i].datatype;
-        value = response.responseJSON.results[i].value;
+        datatype = response[i].datatype;
+        value = response[i].value;
         this.datatypesAndValues[datatype] = value;
 		
 		// For when the response contains single values for a date range
 		// and not an array of values for multiple days
-		measurement = response.responseJSON.results[i].id;
-        description = response.responseJSON.results[i].name;
+		measurement = response[i].id;
+        description = response[i].name;
         this.measurementsAndDescriptions[measurement] = description;
 
 		// For when the results contain an array of dates and temperatures
-		date = response.responseJSON.results[i].date;
+		date = response[i].date;
 		date = date.substring(0, 10);
-		value = response.responseJSON.results[i].value;
+		value = response[i].value;
 		this.datesAndValues.push([date, value]);
 	}
 }
@@ -242,28 +289,35 @@ function ajaxResponse(response) {
 }
 
 // bookmark
+// Output JSON ajax response from custom URL to preformatted html
+function ajaxResponseCustom(response) {
+	var responseStringified, responseDiv;
+	responseStringified = response.responseJSON.results
+	responseStringified = JSON.stringify(responseStringified, null, 4);
+	console.table(response.responseJSON.results);
+	responseDiv = $('<div id="responseDiv" style="white-space:pre;"></div>');
+    responseDiv.html(responseStringified);
+	$('body').append(responseDiv);
+}
+
 function getHighsResponse(response, row, compiledData) {
 	var i, winter, date, value;
-	multiTemp = new WeatherResponse(response);
+	var multiTemp = new WeatherResponse(response);
+	multiTemp = multiTemp.datesAndValues;
+	console.log(row);
 
-	// Create block of html data
+	// Create array with dates and values
 	compiledData.date[row] = [];
 	compiledData.value[row] = [];
-	for (i=0;i<multiTemp.datesAndValues.length;i++) {
-		winter = multiTemp.datesAndValues[0][0].substr(0,4);
-		date = multiTemp.datesAndValues[i][0];
-		value = multiTemp.datesAndValues[i][1];
+	for (i=0;i<multiTemp.length;i++) {
+		winter = multiTemp[0][0].substr(0,4);
+		date = multiTemp[i][0];
+		value = multiTemp[i][1];
 		compiledData.date[row][i] = date;
 		compiledData.value[row][i] = value;
-        // JSON2HtmlTable = JSON2HtmlTable + '<tr><td>' + date + '<td>' + value + '</tr>';
 	}
-	// JSON2HtmlTable = JSON2HtmlTable + '</table>';	
-  	// $('#output').html('Daily temperature highs:<br>' + JSON2HtmlTableValues);
 }
-	
-	
-	
-	
+
 // Format and output list of data types from AJAX response
 function dataTypeResponse(response) {
 	var allMetaData = new WeatherResponse(response);
@@ -341,38 +395,41 @@ function getHighsJustOne(day) {
 	});
 }
 
-
+// bookmark
+//ajaxResponseCustom(response)
 // get data
-function getData() {
-    var urlOutput;
-    urlOutput = buildUrlRangeOfDays();
-    $.ajax({
+
+// get data for a custom URL. It will be outputted to html as preformatted JSON text.
+function getDataCustom(webpage, urlParameters) {
+	var urlOutput = buildUrlCustom(webpage, urlParameters);
+	$.ajax({
         url: urlOutput,
         headers: {token: urlAndToken.token},
         complete: function (response) {
-            ajaxResponse(response);
+            ajaxResponseCustom(response);
         },
         error: function (response) {
-            ajaxResponse(response);
+            console.log('Error: No Server response');
         }
-    });
+	});
 }
 
-// get data
-function getHighs(year, firstyear, finalyear, row, compiledData) {
+// get temerature highs
+function getHighs(year, firstyear, finalyear, row, station, compiledData) {
 	var urlOutput, chartTall, excelTable;
-	urlOutput = buildUrlRangeOfDays(year);
+	urlOutput = buildUrlRangeOfDays(year, station);
     $.ajax({
         url: urlOutput,
         headers: {token: urlAndToken.token},
         complete: function (response) {
 			var i, plotlyData = {};
+			// console.log(response.responseJSON.results);
 			$('#exceltable').html('Loading year: ' + year);
 			getHighsResponse(response, row, compiledData); // Process data
 			if (year === finalyear) {
 				console.log('Years:' + year + ', ' + finalyear);
 				console.log('Year is final year: ' + (year === finalyear));
-				console.log(compiledData.date);
+				console.log(compiledData);
 				chartTall = transposeArray(compiledData.value);
 				// console.log('Transposed chart:' + chartTall);
 				excelTable = arrayToTable(chartTall, {
@@ -384,7 +441,7 @@ function getHighs(year, firstyear, finalyear, row, compiledData) {
 			if (year < finalyear) {
 				year++;
 				row++;
-				getHighs(year, firstyear, finalyear, row, compiledData); // Query server again
+				getHighs(year, firstyear, finalyear, row, station, compiledData); // Query server again
 			}
 },
         error: function (response) {
@@ -424,24 +481,46 @@ response = requests.get(url, headers = headers)
 }
 
 
+function sql() {
+	alasql("CREATE TABLE test (language INT, hello STRING)");
+	alasql("INSERT INTO test VALUES (1,'Hello!')");
+	alasql("INSERT INTO test VALUES (2,'Aloha!')");
+	alasql("INSERT INTO test VALUES (3,'Bonjour!')");
+	console.log( alasql("SELECT * FROM test WHERE language > 0") );
+}
+
 function launchapp() {
 	var year, firstyear, lastyear;
 
 	firstyear = document.getElementById('firstyear').value;
 	lastyear = document.getElementById('lastyear').value;
+	// station = stations.kauhajoki;
+	station = document.getElementById('station').value;
+	station = stations[station];
 	firstyear = firstyear*1; // Convert string to number
 	lastyear = lastyear*1; // Convert string to number
 	year = firstyear;
-	getHighs(year, firstyear, lastyear, 0, compiledData);
+	getHighs(year, firstyear, lastyear, 0, station, compiledData);
 }
+launchapp();
 
+
+// Get list of stations in laihia area
+function laihiastations() {
+	var webpage = 'stations';
+	var urlParameters = {
+		extent: boundingboxes.laihia,
+	};
+	// Produces https://www.ncdc.noaa.gov/cdo-web/api/v2/stations?extent=63,22.7,62.7,21.8
+	getDataCustom(webpage, urlParameters);
+}
 
 // Launch app on load
 $(function () {
-// getData();4
-// getAvailableDataTypes();
+	// laihiastations();
+	// plotlyChartTest();
+	// sql();
 });
-
 
 
 
