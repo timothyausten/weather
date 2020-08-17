@@ -215,18 +215,29 @@ function WeatherResponse(response) {
 		response[i].winter = response[0].date.substring(0,4);
 	}
 
-	// daysOfYearSQL = 
-	alasql('SELECT * FROM ? AS calendar', [daysOfYearJSON]);
-	// alasqlResponse = 
-	alasql('SELECT * FROM ? AS weather', [response]);
+	// See example of how to import json into table
+	// https://github.com/agershun/alasql/blob/develop/examples/nodesample.js
 
-	sqlOuterJoin = 'SELECT * ' +
-		'FROM weather ' +
-		'OUTER JOIN calendar ' +
-		'ON weather.mmdd=calendar.mmdd';
-	sqlOuterJoin = alasql(sqlOuterJoin);
+	var db = new alasql.Database();
+	db.exec('CREATE TABLE calenda');
+	db.tables.calenda.data = daysOfYearJSON;
+	var res1 = db.exec('SELECT * FROM calenda ORDER BY mmdd');
+	db.exec('CREATE TABLE response');
+	db.tables.response.data = response;
+	var res2 = db.exec('SELECT * FROM response ORDER BY mmdd');
+
+	sqlOuterJoin = db.exec(
+		'SELECT * ' +
+		'FROM response ' +
+		'OUTER JOIN calenda ' +
+		'ON response.mmdd=calenda.mmdd ' +
+		'ORDER BY mmdd DESC'
+	);
 	console.table(sqlOuterJoin);
 	// sqlbookmark
+
+	// I shall find a way to combine tables from two different JSON objects
+	// into one database and combine them.
 
 	// If column name is sql keyword, then wrap it in brackets, like [value]
 	// If there is only one table in the JSON object and it has no name, then use "FROM ? AS t"
