@@ -189,22 +189,22 @@ function buildUrlRangeOfDays(year, station) {
 
 function WeatherResponse(response) {
 	var i, datatype, value, measurement, description, date, value, alasqlResponse;
-	var daysOfYearBegin, daysOfYearEnd;
-	var daysOfYear = [];
-	var daysOfYearJSON = [];
 	var daysOfYearSQL, sqlOuterJoin;
 	var beautifiedJSON = JSON.stringify(response, null, 4);
 	var sqlStatement;
+	var daysOfYearJSON;
+	var winter = response.responseJSON.results[0].date.substring(0,4);
 
 	response = response.responseJSON.results;
 
 	// Make an array of calendar days in the format mm-dd
-	for (i=0; i<366; i++) {
-		daysOfYear[i] = addDays(new Date('2020-01-01'), i);
-		daysOfYear[i] = daysOfYear[i].toISOString().substring(5,10);
-		daysOfYearJSON[i] = {};
-		daysOfYearJSON[i].mmdd = daysOfYear[i];
+	daysOfYearJSON = mmdd();
+
+	for (i=0; i<daysOfYearJSON.length; i++) {
+		daysOfYearJSON[i].winter = winter;
 	}
+
+	console.table(daysOfYearJSON);
 
 	for (i=0; i<response.length; i++) {
 		// Truncate date to 10 characters in format yyyy-mm-dd
@@ -212,28 +212,50 @@ function WeatherResponse(response) {
 		// Add column for mm-dd
 		response[i].mmdd = response[i].date.substring(5,10);
 		// Add column for winter year
-		response[i].winter = response[0].date.substring(0,4);
+		response[i].winter = winter;
 	}
+
+	function outerjoin(a, b) {	
+		// a has all values in list, b has some values in list.
+		// Add records from a to b that b is missing
+		var found = false;
+		for (i=0; i<a.length; i++) {
+			// a[i] is the needle
+			for (j=0; j<b.length; j++) {
+				if (a[i].mmdd === b[j].mmdd) {
+					found = true;
+				}
+			}
+			if (!found) {
+				b.push(a[i]);
+			}
+			found = false;
+		}
+		return b;
+	}
+	response = outerjoin(daysOfYearJSON, response);
+	response = sortByProperty(response, 'mmdd');
+	console.table(response);
 
 	// See example of how to import json into table
 	// https://github.com/agershun/alasql/blob/develop/examples/nodesample.js
 
 	var db = new alasql.Database();
-	db.exec('CREATE TABLE calenda');
-	db.tables.calenda.data = daysOfYearJSON;
-	var res1 = db.exec('SELECT * FROM calenda ORDER BY mmdd');
+	db.exec('CREATE TABLE calendar');
 	db.exec('CREATE TABLE response');
+	db.tables.calendar.data = daysOfYearJSON;
 	db.tables.response.data = response;
-	var res2 = db.exec('SELECT * FROM response ORDER BY mmdd');
+	// db.exec('ALTER TABLE calendar MODIFY COLUMN [mmdd] STRING');
+	// db.exec('ALTER TABLE response MODIFY COLUMN mmdd STRING');
 
-	sqlOuterJoin = db.exec(
+/* 	sqlOuterJoin = db.exec(
 		'SELECT * ' +
 		'FROM response ' +
-		'OUTER JOIN calenda ' +
-		'ON response.mmdd=calenda.mmdd ' +
-		'ORDER BY mmdd DESC'
+		'OUTER JOIN calendar ' +
+		'ON response.mmdd=calendar.mmdd ' +
+		'ORDER BY mmdd'
 	);
-	console.table(sqlOuterJoin);
+	console.table(sqlOuterJoin); */
 	// sqlbookmark
 
 	// I shall find a way to combine tables from two different JSON objects
