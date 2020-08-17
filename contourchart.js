@@ -72,14 +72,6 @@ function plotlyChart(date, a, firstyear) {
 
 	console.log(x);
 
-	function concatSubArrays(arr) {
-		// Combine sub-arrays into single array
-		for (i=0; i<arr.length - 1; i++) {
-			arr[0] = arr[0].concat(arr[i + 1]);
-		}
-		return arr[0];
-	}
-
 	// Combine sub-arrays of record numbers into single array
 	x = concatSubArrays(x);
 	// x = concatSubArrays(x);

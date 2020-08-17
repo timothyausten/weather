@@ -53,8 +53,6 @@ dateRangeInput = {
 	}
 };
 
-
-
 function dateRangeConstructor(year) {
     // Subtract 1 from the input value for month because
     // year and day numbering start at 1,
@@ -103,15 +101,16 @@ Available datasets
 */
 
 locations = {
-	pdx:        'GHCND:USW00024229',
+	pdx:           'GHCND:USW00024229',
 	ncarolinazip:  'ZIP:28801', /*somewhere in n. carolina*/
-	ncarolina: 'FIPS:37', /*north carolina, throws errors for some reason*/
+	ncarolina:     'FIPS:37', /*north carolina, throws errors for some reason*/
 };
 stations = {
    orchards:   'GHCND:USC00010008',
    kauhajoki:  'GHCND:FIE00143471',
    vaasa:      'GHCND:FIE00144212',
-   seinäjoki:  'GHCND:FIE00144322'
+   seinäjoki:  'GHCND:FIE00144322',
+   ilomantsi:  'GHCND:FIE00145052'
 
 };
 boundingboxes = {
@@ -159,7 +158,6 @@ function buildUrlCustom(webpage, params) {
     return url;
 }
 
-
 function buildUrlOneDay(date) {
     // GSOM dataset (Global Summary of the Month) for GHCND station USC00010008, for May of 2010 with standard units
     var baseUrl, params, url;
@@ -190,17 +188,46 @@ function buildUrlRangeOfDays(year, station) {
 }
 
 function WeatherResponse(response) {
-    var i, datatype, value, measurement, description, date, value;
+	var i, datatype, value, measurement, description, date, value, alasqlResponse;
+	var daysOfYearBegin, daysOfYearEnd;
+	var daysOfYear = [];
+	var daysOfYearJSON = [];
+	var daysOfYearSQL, sqlOuterJoin;
 	var beautifiedJSON = JSON.stringify(response, null, 4);
 	var sqlStatement;
-	response = response.responseJSON.results;
-	// console.table(response);
 
-	// Truncate date to 10 characters in format yyyy-mm-dd
-	for (i=0; i<response.length; i++) {
-		response[i].date = response[i].date.substring(0,10);
+	response = response.responseJSON.results;
+
+	// Make an array of calendar days in the format mm-dd
+	for (i=0; i<366; i++) {
+		daysOfYear[i] = addDays(new Date('2020-01-01'), i);
+		daysOfYear[i] = daysOfYear[i].toISOString().substring(5,10);
+		daysOfYearJSON[i] = {};
+		daysOfYearJSON[i].mmdd = daysOfYear[i];
 	}
-	
+
+	for (i=0; i<response.length; i++) {
+		// Truncate date to 10 characters in format yyyy-mm-dd
+		response[i].date = response[i].date.substring(0,10);
+		// Add column for mm-dd
+		response[i].mmdd = response[i].date.substring(5,10);
+		// Add column for winter year
+		response[i].winter = response[0].date.substring(0,4);
+	}
+
+	// daysOfYearSQL = 
+	alasql('SELECT * FROM ? AS calendar', [daysOfYearJSON]);
+	// alasqlResponse = 
+	alasql('SELECT * FROM ? AS weather', [response]);
+
+	sqlOuterJoin = 'SELECT * ' +
+		'FROM weather ' +
+		'OUTER JOIN calendar ' +
+		'ON weather.mmdd=calendar.mmdd';
+	sqlOuterJoin = alasql(sqlOuterJoin);
+	console.table(sqlOuterJoin);
+	// sqlbookmark
+
 	// If column name is sql keyword, then wrap it in brackets, like [value]
 	// If there is only one table in the JSON object and it has no name, then use "FROM ? AS t"
 /* 	sqlStatement = 'SELECT ' +
@@ -211,6 +238,7 @@ function WeatherResponse(response) {
 	response = alasql(sqlStatement, [response]); */
 	// console.log(response);
 	// console.table(response);
+	// sqlbookmark
 
 	this.datatypesAndValues = {};
 	this.measurementsAndDescriptions = {};
@@ -300,11 +328,21 @@ function ajaxResponseCustom(response) {
 	$('body').append(responseDiv);
 }
 
+function ajaxResponseStationInfo(response) {
+	var responseStringified, responseDiv;
+	responseStringified = response.responseJSON
+	responseStringified = JSON.stringify(responseStringified, null, 4);
+	console.log(responseStringified);
+	responseDiv = $('<div id="stationinfo" style="white-space:pre;"></div>');
+    responseDiv.html(responseStringified);
+	$('body').append(responseDiv);
+}
+
 function getHighsResponse(response, row, compiledData) {
 	var i, winter, date, value;
 	var multiTemp = new WeatherResponse(response);
 	multiTemp = multiTemp.datesAndValues;
-	console.log(row);
+	console.log('row ' + row);
 
 	// Create array with dates and values
 	compiledData.date[row] = [];
@@ -402,6 +440,7 @@ function getHighsJustOne(day) {
 // get data for a custom URL. It will be outputted to html as preformatted JSON text.
 function getDataCustom(webpage, urlParameters) {
 	var urlOutput = buildUrlCustom(webpage, urlParameters);
+	console.log(urlOutput);
 	$.ajax({
         url: urlOutput,
         headers: {token: urlAndToken.token},
@@ -414,22 +453,101 @@ function getDataCustom(webpage, urlParameters) {
 	});
 }
 
+
+function getDataStationInfo(station) {
+	var urlOutput = 'https://www.ncdc.noaa.gov/cdo-web/api/v2/stations/' + station;
+	console.log(urlOutput);
+	$.ajax({
+        url: urlOutput,
+        headers: {token: urlAndToken.token},
+        complete: function (response) {
+            ajaxResponseStationInfo(response);
+        },
+        error: function (response) {
+            console.log('Error: No Server response');
+        }
+	});
+}
+
 // get temerature highs
 function getHighs(year, firstyear, finalyear, row, station, compiledData) {
-	var urlOutput, chartTall, excelTable;
+	var i, j, urlOutput, chartTall, excelTable;
+	// Create a version 2 of compiledData, because
+	// if you don't then the browser goes into
+	// an infinite loop and crashes
+
 	urlOutput = buildUrlRangeOfDays(year, station);
     $.ajax({
         url: urlOutput,
         headers: {token: urlAndToken.token},
         complete: function (response) {
-			var i, plotlyData = {};
+			var currentDate, nextDate;
+			var compiledData2 = {};
+			var dateArraysConcatenated;
+			var sqlStatement, sqlResult;
+			var compiledDataJSON = []; // Actually this is an array of jsons
+		
 			// console.log(response.responseJSON.results);
 			$('#exceltable').html('Loading year: ' + year);
 			getHighsResponse(response, row, compiledData); // Process data
 			if (year === finalyear) {
-				console.log('Years:' + year + ', ' + finalyear);
-				console.log('Year is final year: ' + (year === finalyear));
+
+
+				/* function testForMissingDays(dates, i, j) {
+					// If at least one day is missing then true
+					var d1, d2, diff;
+					d1 = new Date(dates[i][j]);
+					d2 = new Date(dates[i][j+1]);
+					diff = Math.round((d2 - d1)/86400000); // Test if one day interval
+					// console.log(d1);
+					// console.log(i + ' ' + j);
+					if (diff>1) {
+						return true;
+					} else {
+						return false;
+					}
+				}
+				compiledData2 = compiledData;
+				for (i=0; i<compiledData.date.length; i++) {
+					for (j=0; j<compiledData.date[i].length-1; j++) {
+						currentDate = new Date(compiledData.date[i][j]);
+						nextDate = addDays(currentDate, 1).toISOString().substring(0, 10);
+						if (testForMissingDays(compiledData.date, i, j)) {
+							console.log(typeof nextDate);
+							console.log(nextDate);
+							compiledData2.date[i].splice((j+1), 0, 'hello world');
+							compiledData2.value[i].splice((j+1), 0, null);
+						} else {
+							// console.log('Diff is not greater than one day');
+						}
+					}
+				}
+				compiledData = compiledData2;
+				console.log(compiledData.date[0]); */
+
+				// Concatenate date arrays into one array
+				dateArraysConcatenated = concatSubArrays(compiledData.date);
+
+				for (i=0; i<compiledData.date.length; i++) {
+					compiledDataJSON[i] = {};
+					compiledDataJSON[i] = [];
+					compiledDataJSON[i][j] = {};
+					for (j=0; j<compiledData.date[i].length; j++) {
+						compiledDataJSON[i][j] = {
+							'date': compiledData.date[i][j],
+							'tmax': compiledData.value[i][j]
+						};
+					}
+				}
 				console.log(compiledData);
+				// console.table(compiledDataJSON[0]);
+				sqlStatement = 'SELECT * FROM ? as weather';
+				sqlResult = alasql(sqlStatement, [compiledDataJSON[0]]);
+				// console.table(sqlResult);
+				// sqlbookmark
+
+
+
 				chartTall = transposeArray(compiledData.value);
 				// console.log('Transposed chart:' + chartTall);
 				excelTable = arrayToTable(chartTall, {
@@ -488,24 +606,30 @@ function sql() {
 	alasql("INSERT INTO test VALUES (3,'Bonjour!')");
 	console.log( alasql("SELECT * FROM test WHERE language > 0") );
 }
+// sqlbookmark
 
 function launchapp() {
-	var year, firstyear, lastyear;
+	var year, firstyear, lastyear, station;
 
 	firstyear = document.getElementById('firstyear').value;
 	lastyear = document.getElementById('lastyear').value;
 	// station = stations.kauhajoki;
 	station = document.getElementById('station').value;
-	station = stations[station];
+	station = stations[station]; // get stationid from station name
 	firstyear = firstyear*1; // Convert string to number
 	lastyear = lastyear*1; // Convert string to number
 	year = firstyear;
-	getHighs(year, firstyear, lastyear, 0, station, compiledData);
+	getDataStationInfo(station);
+	getHighs(year, firstyear, lastyear, 0, station, compiledData);	
 }
-launchapp();
+// This is normally launched via the html form,
+// but you can start it here, too.
+// launchapp();
 
 
 // Get list of stations in laihia area
+// This is an implementation of getDataCustom() where you can make a url from scratch
+// for use with the NCEI API
 function laihiastations() {
 	var webpage = 'stations';
 	var urlParameters = {
