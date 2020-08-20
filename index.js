@@ -5,7 +5,6 @@
 
 var urlAndToken = {},
     urlParams = {},
-	dateRangeInput = {},
 	dateRangeTest = {},
 	dateRange = {},
 	dateStart = [],
@@ -40,29 +39,21 @@ urlAndToken = {
     token: 'uZXRsebTFuZXQayyYanptuRTghYsovlk'
 };
 
-
-dateRangeInput = {
-	start: {
-		year: 2008,
-		month: 10,
-		day: 1
-	}, end: {
-		year: 2009,
-		month: 3,
-		day: 31
-	}
-};
-
-function dateRangeConstructor(year) {
+function dateRangeConstructor(year, dateRangeObj) {
     // Subtract 1 from the input value for month because
     // year and day numbering start at 1,
-    // but month numbering starts at 0. 
-	var start = new Date(year, dateRangeInput.start.month - 1, dateRangeInput.start.day + 1);
-	var end = new Date(year + 1, dateRangeInput.start.month - 1, dateRangeInput.start.day);
-	this.start = start;
-	this.end = end;
-	this.startString = start.toISOString().substring(0, 10);
-	this.endString = end.toISOString().substring(0, 10);
+	// but month numbering starts at 0.
+	var startDate = new Date(year, dateRangeObj.start.month - 1, dateRangeObj.start.day + 1);
+	var endDate = new Date(year + 1, dateRangeObj.start.month - 1, dateRangeObj.start.day);
+	this.startDate = startDate;
+	this.endDate = endDate;
+	this.startString = startDate.toISOString().substring(0, 10);
+	this.endString = endDate.toISOString().substring(0, 10);
+	console.log(this.endString);
+	this.start = {};
+	this.end = {};
+	this.end.month = this.endString.substring(6,7);
+	this.end.day = this.endString.substring(9,10);
 }
 
 // dateRangeTest = new dateRangeConstructor(2015);
@@ -74,8 +65,8 @@ function dateRangeConstructor(year) {
 function listOfDates() {
 	// Build a list of dates in ISO format
 	var list;
-	var dateRange = new dateRangeConstructor(year);
-	for (d = dateRange.start; d <= dateRange.end; d.setDate(d.getDate() + 1)) {
+	var dateRange = new dateRangeConstructor(year, dateRangeObj);
+	for (d = dateRange.startDate; d <= dateRange.endDate; d.setDate(d.getDate() + 1)) {
 		dateFormatted = d.toISOString().substring(0, 10);
 		list.push(dateFormatted);
 	}
@@ -171,14 +162,14 @@ function buildUrlOneDay(date) {
     return url;
 }
 
-function buildUrlRangeOfDays(year, station) {
+function buildUrlRangeOfDays(year, dateRangeObj, station) {
     // GHCND dataset (Global daily summaries) for GHCND station USC00010008, for May of 2010 with standard units
     // Produces, for example, datasetid=GSOM&stationid=GHCND:USC00010008&units=standard&startdate=2010-05-01&enddate=2010-05-31
     var baseUrl, params, url;
-	var d = [];
+	var d;
     baseUrl = urlAndToken.url;
-    params = urlParams.maxTempAtLocation;
-	d = new dateRangeConstructor(year);
+	params = urlParams.maxTempAtLocation;
+	d = new dateRangeConstructor(year, dateRangeObj);
 	params.stationid = station;
 	params.startdate = d.startString;
 	params.enddate = d.endString;
@@ -187,24 +178,41 @@ function buildUrlRangeOfDays(year, station) {
     return url;
 }
 
-function WeatherResponse(response) {
+function WeatherResponse(response, dateRangeObj, year) {
 	var i, datatype, value, measurement, description, date, value, alasqlResponse;
 	var daysOfYearSQL, sqlOuterJoin;
 	var beautifiedJSON = JSON.stringify(response, null, 4);
 	var sqlStatement;
 	var daysOfYearJSON;
-	var winter = response.responseJSON.results[0].date.substring(0,4);
 
 	response = response.responseJSON.results;
 
 	// Make an array of calendar days in the format mm-dd
 	daysOfYearJSON = mmdd();
+	// daysOfYearJSON = sortByProperty(daysOfYearJSON, 'mmdd');
 
-	for (i=0; i<daysOfYearJSON.length; i++) {
-		daysOfYearJSON[i].winter = winter;
-	}
+	// console.table(daysOfYearJSON);
 
-	console.table(daysOfYearJSON);
+	(function() {
+		// build full date from year plus mm-dd
+		var mmdd, currentDate;
+		var lastDayInFiscalYear =
+			dateRangeObj.end.month + 
+			pad(dateRangeObj.end.day, 2);
+			lastDayInFiscalYear = lastDayInFiscalYear*1; // Convert string to number
+		for (i=0; i<daysOfYearJSON.length; i++) {
+			mmdd = daysOfYearJSON[i].mmdd;
+			mmddAsNumber = mmdd.substring(0,2) + '' + pad(mmdd.substring(3,5), 2);
+			mmddAsNumber = mmddAsNumber*1; // Convert string to number
+			currentYearDate = new Date (dateRangeObj.start.year + '-' + mmdd);
+			if (mmddAsNumber <= lastDayInFiscalYear) {
+				daysOfYearJSON[i].date = (year+1) + '-' + mmdd
+			} else {
+				daysOfYearJSON[i].date = (year) + '-' + mmdd
+			}
+			daysOfYearJSON[i].winter = year;
+		}
+	}());
 
 	for (i=0; i<response.length; i++) {
 		// Truncate date to 10 characters in format yyyy-mm-dd
@@ -212,7 +220,7 @@ function WeatherResponse(response) {
 		// Add column for mm-dd
 		response[i].mmdd = response[i].date.substring(5,10);
 		// Add column for winter year
-		response[i].winter = winter;
+		response[i].winter = year;
 	}
 
 	function outerjoin(a, b) {	
@@ -234,17 +242,19 @@ function WeatherResponse(response) {
 		return b;
 	}
 	response = outerjoin(daysOfYearJSON, response);
-	response = sortByProperty(response, 'mmdd');
-	console.table(response);
+	response = sortByProperty(response, 'date');
+
+	// console.table(response);
 
 	// See example of how to import json into table
 	// https://github.com/agershun/alasql/blob/develop/examples/nodesample.js
 
-	var db = new alasql.Database();
+	/* var db = new alasql.Database();
 	db.exec('CREATE TABLE calendar');
 	db.exec('CREATE TABLE response');
 	db.tables.calendar.data = daysOfYearJSON;
-	db.tables.response.data = response;
+	db.tables.response.data = response; */
+
 	// db.exec('ALTER TABLE calendar MODIFY COLUMN [mmdd] STRING');
 	// db.exec('ALTER TABLE response MODIFY COLUMN mmdd STRING');
 
@@ -355,7 +365,7 @@ function ajaxResponseCustom(response) {
 	var responseStringified, responseDiv;
 	responseStringified = response.responseJSON.results
 	responseStringified = JSON.stringify(responseStringified, null, 4);
-	console.table(response.responseJSON.results);
+	console.log(response.responseJSON.results);
 	responseDiv = $('<div id="responseDiv" style="white-space:pre;"></div>');
     responseDiv.html(responseStringified);
 	$('body').append(responseDiv);
@@ -371,9 +381,9 @@ function ajaxResponseStationInfo(response) {
 	$('body').append(responseDiv);
 }
 
-function getHighsResponse(response, row, compiledData) {
+function getHighsResponse(response, row, compiledData, dateRangeObj, year) {
 	var i, winter, date, value;
-	var multiTemp = new WeatherResponse(response);
+	var multiTemp = new WeatherResponse(response, dateRangeObj, year);
 	multiTemp = multiTemp.datesAndValues;
 	console.log('row ' + row);
 
@@ -503,13 +513,13 @@ function getDataStationInfo(station) {
 }
 
 // get temerature highs
-function getHighs(year, firstyear, finalyear, row, station, compiledData) {
+function getHighs(dateRangeObj, year, row, station, compiledData) {
 	var i, j, urlOutput, chartTall, excelTable;
 	// Create a version 2 of compiledData, because
 	// if you don't then the browser goes into
 	// an infinite loop and crashes
 
-	urlOutput = buildUrlRangeOfDays(year, station);
+	urlOutput = buildUrlRangeOfDays(year, dateRangeObj, station);
     $.ajax({
         url: urlOutput,
         headers: {token: urlAndToken.token},
@@ -522,41 +532,8 @@ function getHighs(year, firstyear, finalyear, row, station, compiledData) {
 		
 			// console.log(response.responseJSON.results);
 			$('#exceltable').html('Loading year: ' + year);
-			getHighsResponse(response, row, compiledData); // Process data
-			if (year === finalyear) {
-
-
-				/* function testForMissingDays(dates, i, j) {
-					// If at least one day is missing then true
-					var d1, d2, diff;
-					d1 = new Date(dates[i][j]);
-					d2 = new Date(dates[i][j+1]);
-					diff = Math.round((d2 - d1)/86400000); // Test if one day interval
-					// console.log(d1);
-					// console.log(i + ' ' + j);
-					if (diff>1) {
-						return true;
-					} else {
-						return false;
-					}
-				}
-				compiledData2 = compiledData;
-				for (i=0; i<compiledData.date.length; i++) {
-					for (j=0; j<compiledData.date[i].length-1; j++) {
-						currentDate = new Date(compiledData.date[i][j]);
-						nextDate = addDays(currentDate, 1).toISOString().substring(0, 10);
-						if (testForMissingDays(compiledData.date, i, j)) {
-							console.log(typeof nextDate);
-							console.log(nextDate);
-							compiledData2.date[i].splice((j+1), 0, 'hello world');
-							compiledData2.value[i].splice((j+1), 0, null);
-						} else {
-							// console.log('Diff is not greater than one day');
-						}
-					}
-				}
-				compiledData = compiledData2;
-				console.log(compiledData.date[0]); */
+			getHighsResponse(response, row, compiledData, dateRangeObj, year); // Process data
+			if (year === dateRangeObj.end.year) {
 
 				// Concatenate date arrays into one array
 				dateArraysConcatenated = concatSubArrays(compiledData.date);
@@ -572,7 +549,7 @@ function getHighs(year, firstyear, finalyear, row, station, compiledData) {
 						};
 					}
 				}
-				console.log(compiledData);
+				//console.log(compiledData);
 				// console.table(compiledDataJSON[0]);
 				sqlStatement = 'SELECT * FROM ? as weather';
 				sqlResult = alasql(sqlStatement, [compiledDataJSON[0]]);
@@ -587,12 +564,12 @@ function getHighs(year, firstyear, finalyear, row, station, compiledData) {
 						thead: false
 				});
 				$('#exceltable').html(excelTable);
-				plotlyChart(compiledData.date, compiledData.value, firstyear);
+				plotlyChart(compiledData.date, compiledData.value, dateRangeObj);
 			}
-			if (year < finalyear) {
+			if (year < dateRangeObj.end.year) {
 				year++;
 				row++;
-				getHighs(year, firstyear, finalyear, row, station, compiledData); // Query server again
+				getHighs(dateRangeObj, year, row, station, compiledData); // Query server again
 			}
 },
         error: function (response) {
@@ -601,6 +578,7 @@ function getHighs(year, firstyear, finalyear, row, station, compiledData) {
 	});
 }
 
+// I shall find the invalid time value error
 
 // Get available data types
 function getAvailableDataTypes() {
@@ -641,23 +619,61 @@ function sql() {
 }
 // sqlbookmark
 
-function launchapp() {
-	var year, firstyear, lastyear, station;
 
-	firstyear = document.getElementById('firstyear').value;
-	lastyear = document.getElementById('lastyear').value;
-	// station = stations.kauhajoki;
-	station = document.getElementById('station').value;
+function getFormInput() {
+	var year, station;
+	var dateRangeInput = {};
+
+	dateRangeInput = {
+		start: {
+			year: document.getElementById('firstyear').value,
+			month: document.getElementById('startmonth').value,
+			day: document.getElementById('startday').value
+		},
+		end: {
+			year: document.getElementById('lastyear').value,
+		}
+	};
+
+	station = document.getElementById('station').value; // get station name
 	station = stations[station]; // get stationid from station name
-	firstyear = firstyear*1; // Convert string to number
-	lastyear = lastyear*1; // Convert string to number
-	year = firstyear;
+	dateRangeInput.start.day = dateRangeInput.start.day*1; // Convert string to number
+	dateRangeInput.start.month = dateRangeInput.start.month*1; // Convert string to number
+	dateRangeInput.start.year = dateRangeInput.start.year*1; // Convert string to number
+	dateRangeInput.end.year = dateRangeInput.end.year*1; // Convert string to number
+
+	dateRangeInput.start.date = new Date(
+		dateRangeInput.start.year,
+		dateRangeInput.start.month - 1,
+		dateRangeInput.start.day + 1);
+	
+	// End date = start date - 1 day,
+	// but with end year from html form
+	dateRangeInput.end.date = addDays(dateRangeInput.start.date, -1);
+	dateRangeInput.end.date.setFullYear(dateRangeInput.end.year) - 1;
+
+	dateRangeInput.start.ISOstring = dateRangeInput.start.date.toISOString().substring(0,10);
+	dateRangeInput.end.ISOstring = dateRangeInput.end.date.toISOString().substring(0,10);
+
+	// Don't use methods .getMonth() and .getDate()
+	// because they can't cycle correctly from Dec to Jan
+	dateRangeInput.end.month = dateRangeInput.end.ISOstring.substring(5,7)*1;
+	dateRangeInput.end.day = dateRangeInput.end.ISOstring.substring(8,10)*1;
+
+	// console.table(dateRangeInput);
+
+	year = dateRangeInput.start.year;
 	getDataStationInfo(station);
-	getHighs(year, firstyear, lastyear, 0, station, compiledData);	
+	getHighs(dateRangeInput, year, 0, station, compiledData);
 }
+
+function launchapp() {
+	getFormInput();
+}
+
 // This is normally launched via the html form,
 // but you can start it here, too.
-// launchapp();
+launchapp();
 
 
 // Get list of stations in laihia area
@@ -678,6 +694,7 @@ $(function () {
 	// plotlyChartTest();
 	// sql();
 });
+
 
 
 

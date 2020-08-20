@@ -30,9 +30,7 @@ function pad(num, size) {
 	return s;
 }
 
-
-
-function plotlyChart(date, a, firstyear) {
+function plotlyChart(date, a, dateRangeObj) {
 	var x = [],
 	y = [],
 	z = [],
@@ -42,7 +40,7 @@ function plotlyChart(date, a, firstyear) {
 	for (i=0; i<a.length; i++) {
 		y[i] = [];
 		for (j=0; j<a[i].length; j++) {
-			y[i][j] = firstyear + i;
+			y[i][j] = dateRangeObj.start.year + i;
 		}
 	}
 
@@ -70,7 +68,7 @@ function plotlyChart(date, a, firstyear) {
 		}
 	}
 
-	console.log(x);
+	// console.log(x);
 
 	// Combine sub-arrays of record numbers into single array
 	x = concatSubArrays(x);

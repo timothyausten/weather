@@ -13,8 +13,16 @@ function addDays(date, days) {
 	return result;
 }
 
-function mmdd() {
-	// Make an array of calendar days in the format mm-dd
+function pad(num, size) {
+	https://stackoverflow.com/a/2998822
+    var s = num + '';
+    while (s.length < size) s = '0' + s;
+    return s;
+}
+
+
+function mmddOld() {
+	// Make an array of calendar days, without the year, in the format mm-dd
 	var i;
 	var daysOfYear = [];
 	var daysOfYearOutput = [];
@@ -27,6 +35,20 @@ function mmdd() {
 	}
 	return daysOfYearOutput;
 }
+
+function mmdd() {
+	var i, j, day, arrayOut = [];
+	var arrayIn = [31,29,31,30,31,30,31,31,30,31,30,31];
+	for (i=0; i<12; i++) {
+		for (j=0; j<arrayIn[i]; j++) {
+			day = pad((i+1), 2) + '-' + pad((j+1), 2);
+			arrayOut.push({mmdd: day});
+		}
+	}
+	return arrayOut;
+}
+
+
 
 function sortByProperty(objArray, prop, direction){
 	// Sort a JSON object by property
