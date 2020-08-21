@@ -1,11 +1,11 @@
 
 // Data smoothing
 // https://stackoverflow.com/questions/32788836/smoothing-out-values-of-an-array
-function average(data) {
-    var sum = data.reduce(function(sum, value) {
+function average(datums) {
+    var sum = datums.reduce(function(sum, value) {
         return sum + value;
     }, 0);
-    var avg = sum / data.length;
+    var avg = sum / datums.length;
     return avg;
 }
 function smooth(values, alpha) {
@@ -30,53 +30,62 @@ function pad(num, size) {
 	return s;
 }
 
-function plotlyChart(date, a, dateRangeObj) {
-	var x = [],
+function plotlyChart(data, dateRangeObj) {
+	var i, j,
+	x = [],
 	y = [],
-	z = [],
-	i, j;
+	z = [];
 
-	// Assign year number to each item
-	for (i=0; i<a.length; i++) {
-		y[i] = [];
-		for (j=0; j<a[i].length; j++) {
-			y[i][j] = dateRangeObj.start.year + i;
+	//Some optional functions for the x axis
+
+	function year2000() {
+		// The year 2000 is forced for each record. This gives summer months in the middle.
+		x[i] = '2000' + '-' + data[0][i].mmdd;
+	}
+	function mmddNum() {
+		// Only the month and date are taken. They are outputted as a four digit number. The chart is messed up.
+		x[i] = data[0][i].date.substr(5,2) + data[0][i].date.substr(8,2) + '';
+		x[i] = x[i]*1 // Convert to number
+	}
+	function justKey() {
+		// Just the key
+		x[i] = i;
+	}
+	function keyAndMonth() {
+		// Combine key with month
+		x[i] = pad(i, 3) + data[0][i].date.substr(5,2);
+	}
+
+	// Create x-axis labels
+	for (i=0; i<data[0].length; i++) {
+		justKey();
+	}
+
+
+	// Create y-axis labels (years)
+	for (i=0; i<(dateRangeObj.end.year - dateRangeObj.start.year + 1); i++) {
+		y[i] = dateRangeObj.start.year + i;
+	}
+
+	// Create 2D array of values for z
+	for (i=0; i<data.length; i++) {
+		z[i] = [];
+		for (j=0; j<data[i].length; j++) {
+			z[i][j] = data[i][j].value;
+			console.log('Hello world' + ' ' + i + ' ' + j);
 		}
 	}
 
-	// Assign record number to each item
-	/*
-	for (i=0; i<a.length; i++) {
-		x[i] = [];
-		for (j=0; j<a[i].length; j++) {
-			x[i][j] = j;
-		}
-	} */
-
-	// Convert iso dates to js dates
-	for (i=0; i<date.length; i++) {
-		x[i] = [];
-		for (j=0; j<date[i].length; j++) {
-			// The year 2000 is forced for each record. This gives summer months in the middle.
-			// x[i][j] = '2000' + '-' + date[i][j].substr(5,2) + '-' + date[i][j].substr(8,2);
-			// Only the month and date are taken. They are outputted as a four digit number. The chart is messed up.
-			// x[i][j] = date[i][j].substr(5,2) + date[i][j].substr(8,2);
-			// Just the key
-			x[i][j] = j;
-			// Combine key with month
-			// x[i][j] = pad(j, 3) + date[i][j].substr(5,2);
-		}
-	}
-
-	// console.log(x);
-
-	// Combine sub-arrays of record numbers into single array
-	x = concatSubArrays(x);
-	// x = concatSubArrays(x);
-	// Combine sub-arrays of year numbers into single array
-	y = concatSubArrays(y);
-	// Combine sub-arrays of values into single array
-	z = concatSubArrays(a);
+	console.log('data:');
+	console.log(data);
+	console.log('data[0][0].value: ' + data[0][0].value);
+	
+	console.log('x');
+	console.log(x);
+	console.log('y');
+	console.log(y);
+	console.log('z');
+	console.log(z);
 
 	// Data smoothing
 	// z = smooth(z, 16.00);

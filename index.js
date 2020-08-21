@@ -23,14 +23,7 @@ var urlAndToken = {},
 	boundingboxes = {},
 	JSON2HtmlTableValues = '<table>',
 	JSON2HtmlTableDates = '<table>',
-	compiledData = {};
-
-	compiledData.date = [];
-	compiledData.value = [];
-
-
-
-
+	compiledData = [];
 
 // document.getElementById('token')
 
@@ -283,6 +276,7 @@ function WeatherResponse(response, dateRangeObj, year) {
 	// console.table(response);
 	// sqlbookmark
 
+	this.data = response;
 	this.datatypesAndValues = {};
 	this.measurementsAndDescriptions = {};
 	this.datesAndValues = [];
@@ -382,21 +376,25 @@ function ajaxResponseStationInfo(response) {
 }
 
 function getHighsResponse(response, row, compiledData, dateRangeObj, year) {
-	var i, winter, date, value;
+	var i, singleYearData, winter, date, value;
 	var multiTemp = new WeatherResponse(response, dateRangeObj, year);
 	multiTemp = multiTemp.datesAndValues;
-	console.log('row ' + row);
+	console.log('Row ' + row);
+	console.log('Calculated row: ' + (year - dateRangeObj.start.year));
+
+	singleYearData = new WeatherResponse(response, dateRangeObj, year).data;
+	compiledData[year - dateRangeObj.start.year] = singleYearData;
 
 	// Create array with dates and values
-	compiledData.date[row] = [];
-	compiledData.value[row] = [];
+	/* compiledData.date[year - dateRangeObj.start.year] = [];
+	compiledData.value[year - dateRangeObj.start.year] = [];
 	for (i=0;i<multiTemp.length;i++) {
 		winter = multiTemp[0][0].substr(0,4);
 		date = multiTemp[i][0];
 		value = multiTemp[i][1];
-		compiledData.date[row][i] = date;
-		compiledData.value[row][i] = value;
-	}
+		compiledData.date[year - dateRangeObj.start.year][i] = date;
+		compiledData.value[year - dateRangeObj.start.year][i] = value;
+	} */
 }
 
 // Format and output list of data types from AJAX response
@@ -524,47 +522,44 @@ function getHighs(dateRangeObj, year, row, station, compiledData) {
         url: urlOutput,
         headers: {token: urlAndToken.token},
         complete: function (response) {
+			var dateArraysConcatenated;
+			var temperatureArray = [];
+			var dateArray = [];
 			var currentDate, nextDate;
 			var compiledData2 = {};
-			var dateArraysConcatenated;
 			var sqlStatement, sqlResult;
 			var compiledDataJSON = []; // Actually this is an array of jsons
+
+			// I shall find the error that is causing all of the rows of values in compiledData to be concatenated into the first row
+
 		
 			// console.log(response.responseJSON.results);
 			$('#exceltable').html('Loading year: ' + year);
 			getHighsResponse(response, row, compiledData, dateRangeObj, year); // Process data
 			if (year === dateRangeObj.end.year) {
 
-				// Concatenate date arrays into one array
-				dateArraysConcatenated = concatSubArrays(compiledData.date);
-
-				for (i=0; i<compiledData.date.length; i++) {
-					compiledDataJSON[i] = {};
-					compiledDataJSON[i] = [];
-					compiledDataJSON[i][j] = {};
-					for (j=0; j<compiledData.date[i].length; j++) {
-						compiledDataJSON[i][j] = {
-							'date': compiledData.date[i][j],
-							'tmax': compiledData.value[i][j]
-						};
+				for (i=0; i<compiledData.length; i++) {
+					temperatureArray[i] = [];
+					dateArray[i] = [];
+					for (j=0; j<compiledData[i].length; j++) {
+						temperatureArray[i].push(compiledData[i][j].value);
+						dateArray[i].push(compiledData[i][j].date);
 					}
 				}
 				//console.log(compiledData);
 				// console.table(compiledDataJSON[0]);
-				sqlStatement = 'SELECT * FROM ? as weather';
-				sqlResult = alasql(sqlStatement, [compiledDataJSON[0]]);
+				// sqlStatement = 'SELECT * FROM ? as weather';
+				// sqlResult = alasql(sqlStatement, [compiledDataJSON[0]]);
 				// console.table(sqlResult);
 				// sqlbookmark
 
-
-
-				chartTall = transposeArray(compiledData.value);
+				chartTall = transposeArray(temperatureArray);
 				// console.log('Transposed chart:' + chartTall);
 				excelTable = arrayToTable(chartTall, {
 						thead: false
 				});
 				$('#exceltable').html(excelTable);
-				plotlyChart(compiledData.date, compiledData.value, dateRangeObj);
+				plotlyChart(compiledData, dateRangeObj);
 			}
 			if (year < dateRangeObj.end.year) {
 				year++;
