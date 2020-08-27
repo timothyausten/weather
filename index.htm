@@ -5,43 +5,54 @@
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width" />
         <title>NCEI Historical Weather</title>
-        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css" integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ==" crossorigin=""/>
+        <link rel="stylesheet" href="w3.css">
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Raleway">
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css"
+            integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ=="
+            crossorigin=""/>
         <style>
-            .pre {
-                white-space: pre;
-            }
+            body, h1 { font-family: "Raleway", Arial, sans-serif; }
+            h1 {letter-spacing: 6px; text-transform: uppercase; color: gray; }
+            .pre { white-space: pre; }
+            input { margin: 8px 0 0 0; }
+            /* input { float: right; clear: both; }
+            .align-l {float: left; } */
         </style>
     </head>
     <body>
-        <h1>NCEI Historical Weather</h1>
-        <div id="map" style="width:600px;height:400px"></div>
-        <div id="stationinfo"></div>
-        <form id="form">
-            Station ID: <input type="text" id="station" name="station" value="vaasa"><br>
-            First day: <input type="text" id="startday" name="startday" value="1"><br>
-            First month: <input type="text" id="startmonth" name="startmonth" value="10"><br>
-            First year: <input type="text" id="firstyear" name="firstyear" value="1998"><br>
-            Last year: <input type="text" id="lastyear" name="lastyear" value="2000"><br><br>
-            <input type="checkbox" id="estimate" name="estimate">
-            <label for="estimate">Estimate missing data</label><br><br>
-        </form>
-        <button onclick="launchapp()">Submit</button>
-		<div id="progress"></div>
-        <div id="contourchart" style="width:1000px;"></div>
-		<div id="exceltable"></div>
+        <div class="w3-container">
+            <h1 class="w3-xlarge">NCEI Historical Weather</h1>
+            <div id="map" style="width:100%; max-width:1000px; height:400px"></div>
+            <div id="stationinfo"></div>
+            <form style="margin: 0 0 10px 0" id="form">
+                Station ID: <input type="text" id="station" name="station" value="Kauhajoki">
+                <!-- First day: <input  style="width:25px" type="text" id="startday" name="startday" value="1">
+                First month: <input style="width:25px" type="text" id="startmonth" name="startmonth" value="10"><br> -->
+                Years: <input style="width:45px" type="text" id="firstyear" name="firstyear" value="1998">
+                &mdash; <input style="width:45px" type="text" id="lastyear" name="lastyear" value="2000"><br>
+            </form>
+            <button class="w3-btn w3-white w3-border" style="margin: 0 0 10px 0" onclick="launchapp()">Submit</button>
+            <div id="progress"></div>
+            <div id="contourchart"          style="width:1000px; display:block;"></div>
+            <div id="contourchartestimated" style="width:1000px; display:none;"></div>
+            <form id="estimateform" style="display:none;">
+                <input type="checkbox" id="estimate" name="estimate"  onchange="estimateData()">
+                <label for="estimate">Fill in missing data points</label>
+            </form>
+            <div id="exceltable"></div>
 
-        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
-        <script src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js"
-            integrity="sha512-gZwIG9x3wUXg2hdXF6+rVkLF/0Vi9U8D2Ntg4Ga5I5BZpVkVxlJWbSQtXPSiUTtC0TjtGOmxa1AJPuV0CPthew=="
-            crossorigin=""></script>
-        <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
-        <script src="alasql.min.js"></script>
-        <script src="arrayToTable.js"></script>
-        <script src="transposearray.js"></script>
-        <script src="weatherlibrary.js"></script>
-        <script src="contourchart.js"></script>
-        <script src="contourcharttest.js"></script>
-        <script src="index.js"></script>
-		
+            <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+            <script src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js"
+                integrity="sha512-gZwIG9x3wUXg2hdXF6+rVkLF/0Vi9U8D2Ntg4Ga5I5BZpVkVxlJWbSQtXPSiUTtC0TjtGOmxa1AJPuV0CPthew=="
+                crossorigin=""></script>
+            <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+            <script src="alasql.min.js"></script>
+            <script src="arrayToTable.js"></script>
+            <script src="transposearray.js"></script>
+            <script src="weatherlibrary.js"></script>
+            <script src="contourchart.js"></script>
+            <script src="contourcharttest.js"></script>
+            <script src="index.js"></script>
+		</div>
     </body>
 </html>

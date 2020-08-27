@@ -22,8 +22,7 @@ var urlAndToken = {},
 	stations = {},
 	boundingboxes = {},
 	JSON2HtmlTableValues = '<table>',
-	JSON2HtmlTableDates = '<table>',
-	compiledData = [];
+	JSON2HtmlTableDates = '<table>';
 
 urlAndToken = {
 	url: 'https://www.ncdc.noaa.gov/cdo-web/api/v2/data?',
@@ -58,8 +57,33 @@ function listOfDates() {
 	return list;
 }
 
+function boundingBox(mapObj) {
+	// Get OpenStreetMap bounding box of map view
+	var swLat = mapObj.getBounds()._southWest.lat;
+	var swLng = mapObj.getBounds()._southWest.lng;
+	var neLat = mapObj.getBounds()._northEast.lat;
+	var neLng = mapObj.getBounds()._northEast.lng;
+	var output = [
+		[swLat, swLng],
+		[neLat, neLng]
+	];
+	return output;
+}
 
-
+function estimateData() {
+	// Toggle visibility of chart and chart with estimated data points
+	var chart, chartEstimated, bool;
+	chart = document.getElementById('contourchart');
+	chartEstimated = document.getElementById('contourchartestimated');
+	bool = window.getComputedStyle(chart).display === 'block';
+	if (bool) {
+		chart.style.display = 'none';
+		chartEstimated.style.display = 'block';
+	} else {
+		chart.style.display = 'block';
+		chartEstimated.style.display = 'none';
+	}
+}
 
 /*
 Available datasets
@@ -77,16 +101,16 @@ Available datasets
 */
 
 locations = {
-	pdx:           'GHCND:USW00024229',
-	ncarolinazip:  'ZIP:28801', /*somewhere in n. carolina*/
-	ncarolina:     'FIPS:37', /*north carolina, throws errors for some reason*/
+	PDX:                  'GHCND:USW00024229',
+	'N. Carolina 28801':  'ZIP:28801', /*somewhere in n. carolina*/
+	'N. Carolina':        'FIPS:37', /*north carolina, throws errors for some reason*/
 };
 stations = {
-   orchards:   'GHCND:USC00010008',
-   kauhajoki:  'GHCND:FIE00143471',
-   vaasa:      'GHCND:FIE00144212', /* Since 1952. 1994-1996 missing. */
-   seinäjoki:  'GHCND:FIE00144322',
-   ilomantsi:  'GHCND:FIE00145052' /* 1999-2019 */
+   Orchards:   'GHCND:USC00010008',
+   Kauhajoki:  'GHCND:FIE00143471',
+   Vaasa:      'GHCND:FIE00144212', /* Since 1952. 1994-1996 missing. */
+   Seinäjoki:  'GHCND:FIE00144322',
+   Ilomantsi:  'GHCND:FIE00145052' /* 1999-2019 */
 
 };
 boundingboxes = {
@@ -396,19 +420,17 @@ function ajaxResponseListOfStations(response) {
 		});
 		pin[i].responseOutPut = responseOutput[i];
 		pin[i].on('click', function(){
-			console.log(responseOutput[i].id);
 			document.getElementById('station').value = this.responseOutPut.id;
 			document.getElementById('stationinfo').innerHTML =
-				'Station name: ' + this.responseOutPut.name + ', ' +
-				'Available records: ' + this.responseOutPut.mindate + ' through ' +
+				'Station name: ' + this.responseOutPut.name + ', Available ' +
+				this.responseOutPut.mindate + ' &mdash; ' +
 				this.responseOutPut.maxdate;
-			console.log(this);
 		})
 		.addTo(map);
 	}
 
 	responseOutputArray = objectToArray(responseOutput);
-	responseOutputTable = arrayToTable(responseOutputArray, {th: true, thead: true});
+	responseOutputTable = arrayToTable(responseOutputArray, {th: true, thead: true, attrs : {class: 'w3-table-all'}});
 
 	if ($('#stationlist')) $('#stationlist').remove();  // If responseDiv exists then remove it 
 	responseDiv = $('<div id="stationlist"></div>');
@@ -568,7 +590,7 @@ function getDataSingleStationInfo(station) {
 }
 
 // get temerature highs
-function getHighs(dateRangeObj, year, row, station, compiledData, estimateMissingData) {
+function getHighs(dateRangeObj, year, row, station, compiledData) {
 	var i, j, urlOutput, chartTall, excelTable;
 
 	urlOutput = buildUrlRangeOfDays(year, dateRangeObj, station);
@@ -579,13 +601,19 @@ function getHighs(dateRangeObj, year, row, station, compiledData, estimateMissin
 			var dateArraysConcatenated;
 			var temperatureArray = [];
 			var dateArray = [];
+			var percentComplete;
 			var currentDate, nextDate;
 			var compiledData2 = {};
 			var sqlStatement, sqlResult;
 			var compiledDataJSON = []; // Actually this is an array of jsons
 		
 			// console.log(response.responseJSON.results);
-			$('#exceltable').html('Loading year: ' + year);
+
+			percentComplete = (year - dateRangeObj.start.year) / (dateRangeObj.end.year - dateRangeObj.start.year + 1) * 100;
+			$('#progress').html(
+				'Loading year : ' + (year - dateRangeObj.start.year + 1) + ' / ' +
+				(dateRangeObj.end.year - dateRangeObj.start.year + 1)
+			);
 			getHighsResponse(response, row, compiledData, dateRangeObj, year); // Process data
 			if (year === dateRangeObj.end.year) {
 
@@ -608,12 +636,13 @@ function getHighs(dateRangeObj, year, row, station, compiledData, estimateMissin
 						thead: false
 				});
 				// $('#exceltable').html(excelTable);
-				plotlyChart(compiledData, dateRangeObj, estimateMissingData);
+				plotlyChart(compiledData, dateRangeObj);
+				$('#progress').empty();
 			}
 			if (year < dateRangeObj.end.year) {
 				year++;
 				row++;
-				getHighs(dateRangeObj, year, row, station, compiledData, estimateMissingData); // Query server again
+				getHighs(dateRangeObj, year, row, station, compiledData); // Query server again
 			}
 },
         error: function (response) {
@@ -665,13 +694,14 @@ function sql() {
 function getFormInput() {
 	var year, stationID;
 	var dateRangeInput = {};
-	var estimateMissingData;
+	var compiledData = [];
+
 
 	dateRangeInput = {
 		start: {
 			year: document.getElementById('firstyear').value,
-			month: document.getElementById('startmonth').value,
-			day: document.getElementById('startday').value
+			month: 10,
+			day: 1
 		},
 		end: {
 			year: document.getElementById('lastyear').value,
@@ -686,7 +716,8 @@ function getFormInput() {
 	dateRangeInput.start.date = new Date(
 		dateRangeInput.start.year,
 		dateRangeInput.start.month - 1,
-		dateRangeInput.start.day + 1);
+		dateRangeInput.start.day + 1
+	);
 	
 	// End date = start date - 1 day,
 	// but with end year from html form
@@ -709,13 +740,9 @@ function getFormInput() {
 	// else try to enter it as a stationID
 	stationID = stations[stationID] || stationID;
 
-	estimateMissingData = document.getElementById('estimate').checked;
-
-	console.log(typeof estimateMissingData);
-
 	year = dateRangeInput.start.year;
-	getDataSingleStationInfo(stationID);
-	getHighs(dateRangeInput, year, 0, stationID, compiledData, estimateMissingData);
+	// getDataSingleStationInfo(stationID);
+	getHighs(dateRangeInput, year, 0, stationID, compiledData);
 }
 
 function weatherstationmap() {
@@ -756,18 +783,6 @@ function weatherstationmap() {
 	}
 	openStreetMapFunc();
 
-	function boundingBox(mapObj) {
-		// Get OpenStreetMap bounding box of map view
-		var swLat = mapObj.getBounds()._southWest.lat;
-		var swLng = mapObj.getBounds()._southWest.lng;
-		var neLat = mapObj.getBounds()._northEast.lat;
-		var neLng = mapObj.getBounds()._northEast.lng;
-		var output = [
-			[swLat, swLng],
-			[neLat, neLng]
-		];
-		return output;
-	}
 
 	map.on('moveend', function() {
 		var mapviewBoundingBox = boundingBox(this);
@@ -777,13 +792,14 @@ function weatherstationmap() {
 		var bb = mapviewBoundingBox;
 		bb = bb[0][0] + ', ' + bb[0][1] + ', ' + bb[1][0] + ', ' + bb[1][1];
 		// var mapviewBoundingBox = map.toBBoxString(); // didn't work
-		console.log(bb);
 		getListOfStations(bb);
    });
 }
 
+
 function launchapp() {
 	getFormInput();
+
 }
 
 // This is normally launched via the html form,

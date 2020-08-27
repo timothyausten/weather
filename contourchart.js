@@ -22,27 +22,30 @@ function smooth(values, alpha) {
 }
 // smooth(array, 0.85);
 
-function plotlyChart(data, dateRangeObj, estimateMissingData) {
+function plotlyChart(data, dateRangeObj) {
 	var i, j,
 	x = [],
 	y = [],
 	z = [];
 
-
-
-
-
-
-	//Some optional functions for the x axis
+	//Optional functions for x-axis
 
 	function year2000() {
-		// The year 2000 is forced for each record. This gives summer months in the middle.
+		// The year 2000 is forced for each record
+		// Plotly interprets ISO date string as date and sorts dates in ascending order
 		x[i] = '2000' + '-' + data[0][i].mmdd;
+		console.log(x[i]);
+	}
+	function yearOne() {
+		// Dates of first year
+		// Plotly interprets ISO date string as date and sorts dates in ascending order
+		x[i] = data[0][i].date;
 	}
 	function mmddNum() {
 		// Only the month and date are taken. They are outputted as a four digit number. The chart is messed up.
 		x[i] = data[0][i].date.substr(5,2) + data[0][i].date.substr(8,2) + '';
 		x[i] = x[i]*1 // Convert to number
+		console.log(x[i]);
 	}
 	function key() {
 		// Just the key
@@ -54,14 +57,26 @@ function plotlyChart(data, dateRangeObj, estimateMissingData) {
 	}
 	function monthNum() {
 		// Month as number
-		x[i] = data[0][i].date.substr(4,5);
+		x[i] = data[0][i].date.substr(5,2);
 	}
 	function mon() {
 		// Month as Mmm
-		var monthname = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-		monNum = data[0][i].date.substr(4,5)*1;
+		var monthname = ['Dec', 'Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct', 'Nov'];
+		monNum = data[0][i].date.substr(5,2)*1;
 		x[i] = monthname[monNum];
 	}
+	function monthNumber() {
+		// Month as number
+		x[i] = data[0][i].date.substr(5,2)*1;
+		console.log(x[i]);
+	}
+	function monthWholeNumber() {
+		// Month as whole number + day as fraction of month
+		x[i] = data[0][i].date.substr(5,2)*1 + data[0][i].date.substr(8,2)/30;
+		console.log(x[i]);
+	}
+
+	// End of optional functions for x-axis
 
 
 	// Create x-axis labels
@@ -88,16 +103,24 @@ function plotlyChart(data, dateRangeObj, estimateMissingData) {
 		y: y,
 		z: z,
 		type: 'contour' /*heatmap*/,
-		connectgaps: estimateMissingData
+		connectgaps: false
+	}];
+	dataEstimated = [{
+		x: x,
+		y: y,
+		z: z,
+		type: 'contour' /*heatmap*/,
+		connectgaps: true
 	}];
 
 	$('#contourchart').empty(); // Clear chart before adding new chart
-
+	$('#contourchartestimated').empty(); // Clear chart before adding new chart
+	document.getElementById('estimateform').style.display = 'inline';
 
 	//Remove year from bottom tick labels
 	// For example change "Jan 2000" to "Jan"
 	// https://javascriptinfo.com/view/2815623/formatting-text-from-axis-ticks-in-plotly-using-tickformat
-	Plotly.newPlot('contourchart', data);	
-	
+	Plotly.newPlot('contourchart', data);
+	Plotly.newPlot('contourchartestimated', dataEstimated);
 }
 
