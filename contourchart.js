@@ -22,19 +22,16 @@ function smooth(values, alpha) {
 }
 // smooth(array, 0.85);
 
-function pad(num, size) {
-	// format with leading zeros
-	// source https://stackoverflow.com/a/2998822
-	var s = num+"";
-	while (s.length < size) s = "0" + s;
-	return s;
-}
-
-function plotlyChart(data, dateRangeObj) {
+function plotlyChart(data, dateRangeObj, estimateMissingData) {
 	var i, j,
 	x = [],
 	y = [],
 	z = [];
+
+
+
+
+
 
 	//Some optional functions for the x axis
 
@@ -47,7 +44,7 @@ function plotlyChart(data, dateRangeObj) {
 		x[i] = data[0][i].date.substr(5,2) + data[0][i].date.substr(8,2) + '';
 		x[i] = x[i]*1 // Convert to number
 	}
-	function justKey() {
+	function key() {
 		// Just the key
 		x[i] = i;
 	}
@@ -55,37 +52,33 @@ function plotlyChart(data, dateRangeObj) {
 		// Combine key with month
 		x[i] = pad(i, 3) + data[0][i].date.substr(5,2);
 	}
-
-	// Create x-axis labels
-	for (i=0; i<data[0].length; i++) {
-		justKey();
+	function monthNum() {
+		// Month as number
+		x[i] = data[0][i].date.substr(4,5);
+	}
+	function mon() {
+		// Month as Mmm
+		var monthname = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+		monNum = data[0][i].date.substr(4,5)*1;
+		x[i] = monthname[monNum];
 	}
 
 
+	// Create x-axis labels
+	for (i=0; i<data[0].length; i++) {
+		key();
+	}
 	// Create y-axis labels (years)
 	for (i=0; i<(dateRangeObj.end.year - dateRangeObj.start.year + 1); i++) {
 		y[i] = dateRangeObj.start.year + i;
 	}
-
 	// Create 2D array of values for z
 	for (i=0; i<data.length; i++) {
 		z[i] = [];
 		for (j=0; j<data[i].length; j++) {
 			z[i][j] = data[i][j].value;
-			console.log('Hello world' + ' ' + i + ' ' + j);
 		}
 	}
-
-	console.log('data:');
-	console.log(data);
-	console.log('data[0][0].value: ' + data[0][0].value);
-	
-	console.log('x');
-	console.log(x);
-	console.log('y');
-	console.log(y);
-	console.log('z');
-	console.log(z);
 
 	// Data smoothing
 	// z = smooth(z, 16.00);
@@ -94,17 +87,14 @@ function plotlyChart(data, dateRangeObj) {
 		x: x,
 		y: y,
 		z: z,
-		type: 'contour'
+		type: 'contour' /*heatmap*/,
+		connectgaps: estimateMissingData
 	}];
 
 	//Remove year from bottom tick labels
 	// For example change "Jan 2000" to "Jan"
 	// https://javascriptinfo.com/view/2815623/formatting-text-from-axis-ticks-in-plotly-using-tickformat
-	Plotly.newPlot('contourchart', data);
-	Plotly.d3.selectAll(".xtick text").each(function(d, i) {
-		var label = Plotly.d3.select(this);
-		label.html(label.html().substr(0, 3));
-	});
+	Plotly.newPlot('contourchart', data);	
 	
 }
 

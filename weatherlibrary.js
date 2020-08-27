@@ -4,6 +4,8 @@ function concatSubArrays(arr) {
 		arr[0] = arr[0].concat(arr[i + 1]);
 	}
 	return arr[0];
+
+	
 }
 
 function addDays(date, days) {
@@ -48,7 +50,15 @@ function mmdd() {
 	return arrayOut;
 }
 
-
+function objectToArray(obj) {
+	var header, arr = [];
+	header = Object.keys(obj[0]);
+	arr[0] = header;
+	for (i=1; i<obj.length - 1; i++) {
+		arr[i] = Object.values(obj[i]);
+	}
+	return arr;
+}
 
 function sortByProperty(objArray, prop, direction){
 	// Sort a JSON object by property

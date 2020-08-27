@@ -25,8 +25,6 @@ var urlAndToken = {},
 	JSON2HtmlTableDates = '<table>',
 	compiledData = [];
 
-// document.getElementById('token')
-
 urlAndToken = {
 	url: 'https://www.ncdc.noaa.gov/cdo-web/api/v2/data?',
     token: 'uZXRsebTFuZXQayyYanptuRTghYsovlk'
@@ -42,18 +40,12 @@ function dateRangeConstructor(year, dateRangeObj) {
 	this.endDate = endDate;
 	this.startString = startDate.toISOString().substring(0, 10);
 	this.endString = endDate.toISOString().substring(0, 10);
-	console.log(this.endString);
 	this.start = {};
 	this.end = {};
 	this.end.month = this.endString.substring(6,7);
 	this.end.day = this.endString.substring(9,10);
 }
 
-// dateRangeTest = new dateRangeConstructor(2015);
-// console.log('start: ' + dateRangeTest.startString);
-// console.log('end: ' + dateRangeTest.endString);
-
-// dateEndString = dateEnd.toISOString().substring(0, 10)
 
 function listOfDates() {
 	// Build a list of dates in ISO format
@@ -92,9 +84,9 @@ locations = {
 stations = {
    orchards:   'GHCND:USC00010008',
    kauhajoki:  'GHCND:FIE00143471',
-   vaasa:      'GHCND:FIE00144212',
+   vaasa:      'GHCND:FIE00144212', /* Since 1952. 1994-1996 missing. */
    seinäjoki:  'GHCND:FIE00144322',
-   ilomantsi:  'GHCND:FIE00145052'
+   ilomantsi:  'GHCND:FIE00145052' /* 1999-2019 */
 
 };
 boundingboxes = {
@@ -133,12 +125,14 @@ urlParams.maxTempAtLocation = {
 	datatypeid: 'TMAX'
 };
 
-function buildUrlCustom(webpage, params) {
+function buildUrlCustom(params) {
     // Produces url with whatever parameters you want
-    var baseUrl, params, url;
+    var baseUrl, params, url, webpage;
 	baseUrl = 'https://www.ncdc.noaa.gov/cdo-web/api/v2/';
+	webpage = params.webpage;
+	delete params.webpage; // Remove webpage property from params object before running $.param(params)
     params = $.param(params);
-    url = baseUrl + webpage + '?' + params;
+	url = baseUrl + webpage + '?' + params;
     return url;
 }
 
@@ -183,7 +177,6 @@ function WeatherResponse(response, dateRangeObj, year) {
 	// Make an array of calendar days in the format mm-dd
 	daysOfYearJSON = mmdd();
 	// daysOfYearJSON = sortByProperty(daysOfYearJSON, 'mmdd');
-
 	// console.table(daysOfYearJSON);
 
 	(function() {
@@ -206,6 +199,18 @@ function WeatherResponse(response, dateRangeObj, year) {
 			daysOfYearJSON[i].winter = year;
 		}
 	}());
+
+	// If year missing, then fill in year with null values
+	if (response == null) {
+		var response = [];
+		for (i=0; i<366; i++) {
+			response[i] = {};
+			response[i].date = daysOfYearJSON[i].date;
+			response[i].mmdd = daysOfYearJSON[i].mmdd;
+			response[i].winter = daysOfYearJSON[i].winter;
+			response[i].value = -20;
+		}
+	}
 
 	for (i=0; i<response.length; i++) {
 		// Truncate date to 10 characters in format yyyy-mm-dd
@@ -260,9 +265,6 @@ function WeatherResponse(response, dateRangeObj, year) {
 	);
 	console.table(sqlOuterJoin); */
 	// sqlbookmark
-
-	// I shall find a way to combine tables from two different JSON objects
-	// into one database and combine them.
 
 	// If column name is sql keyword, then wrap it in brackets, like [value]
 	// If there is only one table in the JSON object and it has no name, then use "FROM ? AS t"
@@ -360,41 +362,65 @@ function ajaxResponseCustom(response) {
 	responseStringified = response.responseJSON.results
 	responseStringified = JSON.stringify(responseStringified, null, 4);
 	console.log(response.responseJSON.results);
+	if (responseDiv) responseDiv.remove();  // If responseDiv exists then remove it 
 	responseDiv = $('<div id="responseDiv" style="white-space:pre;"></div>');
     responseDiv.html(responseStringified);
 	$('body').append(responseDiv);
 }
 
-function ajaxResponseStationInfo(response) {
+function ajaxResponseSingleStationInfo(response) {
 	var responseStringified, responseDiv;
 	responseStringified = response.responseJSON
 	responseStringified = JSON.stringify(responseStringified, null, 4);
-	console.log(responseStringified);
+	// console.log(responseStringified);
 	responseDiv = $('<div id="stationinfo" style="white-space:pre;"></div>');
     responseDiv.html(responseStringified);
 	$('body').append(responseDiv);
 }
 
+function ajaxResponseListOfStations(response) {
+	var responseDiv, responseOutput, responseOutputArray, responseOutputTable, pin = [];
+	responseOutput = response.responseJSON.results;
+
+	// console.log(responseOutput[0].latitude);
+	
+	$('.leaflet-interactive').empty();
+	$('.leaflet-pane.leaflet-shadow-pane').empty();
+
+	/* for (i=0; i<responseOutput.length; i++) { */
+	for (i=0; i<responseOutput.length; i++) {
+		pin[i] = L.marker([responseOutput[i].latitude, responseOutput[i].longitude], {
+			name: responseOutput[i].name,
+			alt: responseOutput[i].name,
+			keyboard: true
+		});
+		pin[i].responseOutPut = responseOutput[i];
+		pin[i].on('click', function(){
+			console.log(responseOutput[i].id);
+			document.getElementById('station').value = this.responseOutPut.id;
+			document.getElementById('stationinfo').innerHTML =
+				'Station name: ' + this.responseOutPut.name + ', ' +
+				'Available records: ' + this.responseOutPut.mindate + ' through ' +
+				this.responseOutPut.maxdate;
+			console.log(this);
+		})
+		.addTo(map);
+	}
+
+	responseOutputArray = objectToArray(responseOutput);
+	responseOutputTable = arrayToTable(responseOutputArray, {th: true, thead: true});
+
+	if ($('#stationlist')) $('#stationlist').remove();  // If responseDiv exists then remove it 
+	responseDiv = $('<div id="stationlist"></div>');
+    responseDiv.html(responseOutputTable);
+	$('body').append(responseDiv);
+}
+
 function getHighsResponse(response, row, compiledData, dateRangeObj, year) {
-	var i, singleYearData, winter, date, value;
-	var multiTemp = new WeatherResponse(response, dateRangeObj, year);
-	multiTemp = multiTemp.datesAndValues;
-	console.log('Row ' + row);
-	console.log('Calculated row: ' + (year - dateRangeObj.start.year));
-
+	var i, singleYearData;
 	singleYearData = new WeatherResponse(response, dateRangeObj, year).data;
-	compiledData[year - dateRangeObj.start.year] = singleYearData;
+	compiledData.push(singleYearData);
 
-	// Create array with dates and values
-	/* compiledData.date[year - dateRangeObj.start.year] = [];
-	compiledData.value[year - dateRangeObj.start.year] = [];
-	for (i=0;i<multiTemp.length;i++) {
-		winter = multiTemp[0][0].substr(0,4);
-		date = multiTemp[i][0];
-		value = multiTemp[i][1];
-		compiledData.date[year - dateRangeObj.start.year][i] = date;
-		compiledData.value[year - dateRangeObj.start.year][i] = value;
-	} */
 }
 
 // Format and output list of data types from AJAX response
@@ -404,6 +430,12 @@ function dataTypeResponse(response) {
 	console.log('Meta data: ');
 	console.log(allMetaData);
 }
+
+
+
+
+
+
 
 /********
  * AJAX *
@@ -479,8 +511,16 @@ function getHighsJustOne(day) {
 // get data
 
 // get data for a custom URL. It will be outputted to html as preformatted JSON text.
-function getDataCustom(webpage, urlParameters) {
-	var urlOutput = buildUrlCustom(webpage, urlParameters);
+function getDataCustom(urlParameters) {
+	var urlOutput;
+
+	// If whole url string given, then take that,
+	// else build url from object list of parameters
+	if (typeof urlParameters === 'string') {
+		urlOutput = urlParameters;
+	} else {
+		urlOutput = buildUrlCustom(urlParameters);
+	}
 	console.log(urlOutput);
 	$.ajax({
         url: urlOutput,
@@ -495,27 +535,41 @@ function getDataCustom(webpage, urlParameters) {
 }
 
 
-function getDataStationInfo(station) {
-	var urlOutput = 'https://www.ncdc.noaa.gov/cdo-web/api/v2/stations/' + station;
-	console.log(urlOutput);
+
+function getDataListOfStations(urlParameters) {
+	var urlOutput = buildUrlCustom(urlParameters);
 	$.ajax({
         url: urlOutput,
         headers: {token: urlAndToken.token},
         complete: function (response) {
-            ajaxResponseStationInfo(response);
+            ajaxResponseListOfStations(response);
         },
         error: function (response) {
-            console.log('Error: No Server response');
+            console.log('Error: No server response');
+        }
+	});
+}
+
+
+
+function getDataSingleStationInfo(station) {
+	var urlOutput = 'https://www.ncdc.noaa.gov/cdo-web/api/v2/stations/' + station;
+	// console.log(urlOutput);
+	$.ajax({
+        url: urlOutput,
+        headers: {token: urlAndToken.token},
+        complete: function (response) {
+            ajaxResponseSingleStationInfo(response);
+        },
+        error: function (response) {
+            console.log('Error: No server response');
         }
 	});
 }
 
 // get temerature highs
-function getHighs(dateRangeObj, year, row, station, compiledData) {
+function getHighs(dateRangeObj, year, row, station, compiledData, estimateMissingData) {
 	var i, j, urlOutput, chartTall, excelTable;
-	// Create a version 2 of compiledData, because
-	// if you don't then the browser goes into
-	// an infinite loop and crashes
 
 	urlOutput = buildUrlRangeOfDays(year, dateRangeObj, station);
     $.ajax({
@@ -529,9 +583,6 @@ function getHighs(dateRangeObj, year, row, station, compiledData) {
 			var compiledData2 = {};
 			var sqlStatement, sqlResult;
 			var compiledDataJSON = []; // Actually this is an array of jsons
-
-			// I shall find the error that is causing all of the rows of values in compiledData to be concatenated into the first row
-
 		
 			// console.log(response.responseJSON.results);
 			$('#exceltable').html('Loading year: ' + year);
@@ -546,25 +597,23 @@ function getHighs(dateRangeObj, year, row, station, compiledData) {
 						dateArray[i].push(compiledData[i][j].date);
 					}
 				}
-				//console.log(compiledData);
-				// console.table(compiledDataJSON[0]);
-				// sqlStatement = 'SELECT * FROM ? as weather';
-				// sqlResult = alasql(sqlStatement, [compiledDataJSON[0]]);
-				// console.table(sqlResult);
-				// sqlbookmark
+
+				// Add year to first part of html table
+				for (i=0; i<temperatureArray.length; i++) {
+					temperatureArray[i].unshift(dateRangeObj.start.year + i);
+				}
 
 				chartTall = transposeArray(temperatureArray);
-				// console.log('Transposed chart:' + chartTall);
 				excelTable = arrayToTable(chartTall, {
 						thead: false
 				});
-				$('#exceltable').html(excelTable);
-				plotlyChart(compiledData, dateRangeObj);
+				// $('#exceltable').html(excelTable);
+				plotlyChart(compiledData, dateRangeObj, estimateMissingData);
 			}
 			if (year < dateRangeObj.end.year) {
 				year++;
 				row++;
-				getHighs(dateRangeObj, year, row, station, compiledData); // Query server again
+				getHighs(dateRangeObj, year, row, station, compiledData, estimateMissingData); // Query server again
 			}
 },
         error: function (response) {
@@ -572,8 +621,6 @@ function getHighs(dateRangeObj, year, row, station, compiledData) {
         }
 	});
 }
-
-// I shall find the invalid time value error
 
 // Get available data types
 function getAvailableDataTypes() {
@@ -616,8 +663,9 @@ function sql() {
 
 
 function getFormInput() {
-	var year, station;
+	var year, stationID;
 	var dateRangeInput = {};
+	var estimateMissingData;
 
 	dateRangeInput = {
 		start: {
@@ -630,8 +678,6 @@ function getFormInput() {
 		}
 	};
 
-	station = document.getElementById('station').value; // get station name
-	station = stations[station]; // get stationid from station name
 	dateRangeInput.start.day = dateRangeInput.start.day*1; // Convert string to number
 	dateRangeInput.start.month = dateRangeInput.start.month*1; // Convert string to number
 	dateRangeInput.start.year = dateRangeInput.start.year*1; // Convert string to number
@@ -657,9 +703,83 @@ function getFormInput() {
 
 	// console.table(dateRangeInput);
 
+	stationID = document.getElementById('station').value; // get station name
+
+	// If station name exists in list, use that,
+	// else try to enter it as a stationID
+	stationID = stations[stationID] || stationID;
+
+	estimateMissingData = document.getElementById('estimate').checked;
+
+	console.log(typeof estimateMissingData);
+
 	year = dateRangeInput.start.year;
-	getDataStationInfo(station);
-	getHighs(dateRangeInput, year, 0, station, compiledData);
+	getDataSingleStationInfo(stationID);
+	getHighs(dateRangeInput, year, 0, stationID, compiledData, estimateMissingData);
+}
+
+function weatherstationmap() {
+	var mapDiv, Map, mapBoxParams, mapBoxToken, mapBoxURL, mapBoxURLbase, attribution;
+	// mapDiv = $('<div id="mapid" style="height:180px"></div>')
+	// $('body').prepend(mapDiv);
+	// map = L.map('map').setView([51.505, -0.09], 13);
+	map = L.map('map').setView([62.3, 23.3], 5);
+
+	mapBoxURLbase = 'https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token={';
+	mapBoxToken = 'pk.eyJ1IjoidGltb3RoeWF1c3RlbiIsImEiOiJja2U4OG1zNTEwamhwMnlybm9od3Z1ZHA2In0.MU4oZlSuP2lf4yPU6mPESw';
+	mapBoxURL = mapBoxURLbase + mapBoxToken + '}';
+	attribution = 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a>' + ' ' +
+	'contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>,' + ' ' +
+	'Imagery © <a href="https://www.mapbox.com/">Mapbox</a>';
+
+	mapBoxParams = {
+		attribution: attribution,
+		maxZoom: 18,
+		id: 'mapbox/streets-v11',
+		tileSize: 516,
+		zoomOffset: -1,
+		accessToken: mapBoxToken
+	};
+
+	function mapBoxFunc() {
+		L.tileLayer(mapBoxURL, mapBoxParams).addTo(map);
+	}
+	function openStreetMapFunc() {
+		//add a tile layer to add to our map, in this case it's the 'standard' OpenStreetMap.org tile server
+		L.tileLayer(
+			'http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+			{
+				attribution: '&copy; <a href="https://openstreetmap.org">OpenStreetMap</a> contributors',
+				maxZoom: 18
+			}
+		).addTo(map);
+	}
+	openStreetMapFunc();
+
+	function boundingBox(mapObj) {
+		// Get OpenStreetMap bounding box of map view
+		var swLat = mapObj.getBounds()._southWest.lat;
+		var swLng = mapObj.getBounds()._southWest.lng;
+		var neLat = mapObj.getBounds()._northEast.lat;
+		var neLng = mapObj.getBounds()._northEast.lng;
+		var output = [
+			[swLat, swLng],
+			[neLat, neLng]
+		];
+		return output;
+	}
+
+	map.on('moveend', function() {
+		var mapviewBoundingBox = boundingBox(this);
+		var rectOptions = {color: 'Red', weight: 1};
+		/* var rectangle = L.rectangle(mapviewBoundingBox, rectOptions);
+		rectangle.addTo(this); */
+		var bb = mapviewBoundingBox;
+		bb = bb[0][0] + ', ' + bb[0][1] + ', ' + bb[1][0] + ', ' + bb[1][1];
+		// var mapviewBoundingBox = map.toBBoxString(); // didn't work
+		console.log(bb);
+		getListOfStations(bb);
+   });
 }
 
 function launchapp() {
@@ -668,24 +788,36 @@ function launchapp() {
 
 // This is normally launched via the html form,
 // but you can start it here, too.
-launchapp();
+// launchapp();
 
 
 // Get list of stations in laihia area
 // This is an implementation of getDataCustom() where you can make a url from scratch
 // for use with the NCEI API
-function laihiastations() {
-	var webpage = 'stations';
-	var urlParameters = {
-		extent: boundingboxes.laihia,
-	};
-	// Produces https://www.ncdc.noaa.gov/cdo-web/api/v2/stations?extent=63,22.7,62.7,21.8
-	getDataCustom(webpage, urlParameters);
+function customUrl() {
+	//var urlParameters = {
+	//	webpage: 'stations', /* Name of "webpage" after base Url, not a property:value parameter */
+	//	extent: boundingboxes.laihia
+	//};
+	// Produces https://www.ncdc.noaa.gov/cdo-web/api/v2/stations?extent=62.7,21.8,63,22.7
+	var urlParameters = 'https://www.ncdc.noaa.gov/cdo-web/api/v2/stations?extent=62.7,21.8,63,22.7';
+	getDataCustom(urlParameters);
 }
+
+function getListOfStations(mapviewBoundingBox) {
+	var urlParameters = {
+		webpage: 'stations',
+		extent: mapviewBoundingBox
+	}
+	getDataListOfStations(urlParameters);
+}
+
+
 
 // Launch app on load
 $(function () {
-	// laihiastations();
+	weatherstationmap();
+	getListOfStations(boundingboxes.laihia);
 	// plotlyChartTest();
 	// sql();
 });

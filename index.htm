@@ -5,6 +5,7 @@
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width" />
         <title>NCEI Historical Weather</title>
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css" integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ==" crossorigin=""/>
         <style>
             .pre {
                 white-space: pre;
@@ -13,12 +14,16 @@
     </head>
     <body>
         <h1>NCEI Historical Weather</h1>
+        <div id="map" style="width:600px;height:400px"></div>
+        <div id="stationinfo"></div>
         <form id="form">
-            Station ID: <input type="text" id="station" name="station" value="kauhajoki"><br>
+            Station ID: <input type="text" id="station" name="station" value="vaasa"><br>
             First day: <input type="text" id="startday" name="startday" value="1"><br>
             First month: <input type="text" id="startmonth" name="startmonth" value="10"><br>
             First year: <input type="text" id="firstyear" name="firstyear" value="1998"><br>
             Last year: <input type="text" id="lastyear" name="lastyear" value="2000"><br><br>
+            <input type="checkbox" id="estimate" name="estimate">
+            <label for="estimate">Estimate missing data</label><br><br>
         </form>
         <button onclick="launchapp()">Submit</button>
 		<div id="progress"></div>
@@ -26,6 +31,9 @@
 		<div id="exceltable"></div>
 
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+        <script src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js"
+            integrity="sha512-gZwIG9x3wUXg2hdXF6+rVkLF/0Vi9U8D2Ntg4Ga5I5BZpVkVxlJWbSQtXPSiUTtC0TjtGOmxa1AJPuV0CPthew=="
+            crossorigin=""></script>
         <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
         <script src="alasql.min.js"></script>
         <script src="arrayToTable.js"></script>
