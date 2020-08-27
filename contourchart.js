@@ -91,6 +91,9 @@ function plotlyChart(data, dateRangeObj, estimateMissingData) {
 		connectgaps: estimateMissingData
 	}];
 
+	$('#contourchart').empty(); // Clear chart before adding new chart
+
+
 	//Remove year from bottom tick labels
 	// For example change "Jan 2000" to "Jan"
 	// https://javascriptinfo.com/view/2815623/formatting-text-from-axis-ticks-in-plotly-using-tickformat

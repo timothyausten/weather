@@ -208,7 +208,7 @@ function WeatherResponse(response, dateRangeObj, year) {
 			response[i].date = daysOfYearJSON[i].date;
 			response[i].mmdd = daysOfYearJSON[i].mmdd;
 			response[i].winter = daysOfYearJSON[i].winter;
-			response[i].value = -20;
+			response[i].value = null;
 		}
 	}
 
