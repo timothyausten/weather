@@ -106,12 +106,12 @@ locations = {
 	'N. Carolina':        'FIPS:37', /*north carolina, throws errors for some reason*/
 };
 stations = {
-   Orchards:   'GHCND:USC00010008',
+   Orchards:   'GHCND:US1WACK0003',
    Kauhajoki:  'GHCND:FIE00143471',
    Vaasa:      'GHCND:FIE00144212', /* Since 1952. 1994-1996 missing. */
    Seinäjoki:  'GHCND:FIE00144322',
-   Ilomantsi:  'GHCND:FIE00145052' /* 1999-2019 */
-
+   Ilomantsi:  'GHCND:FIE00145052', /* 1999-2019 */
+   Seville:    'GHCND:SPE00120512'
 };
 boundingboxes = {
 	laihia:'62.7,21.8,63,22.7',
@@ -392,42 +392,44 @@ function ajaxResponseCustom(response) {
 	$('body').append(responseDiv);
 }
 
-function ajaxResponseSingleStationInfo(response) {
+function ajaxResponseSingleStationInfoStringified(response) {
+	// Send json as text directly to html:
 	var responseStringified, responseDiv;
 	responseStringified = response.responseJSON
 	responseStringified = JSON.stringify(responseStringified, null, 4);
-	// console.log(responseStringified);
 	responseDiv = $('<div id="stationinfo" style="white-space:pre;"></div>');
     responseDiv.html(responseStringified);
 	$('body').append(responseDiv);
 }
 
 function ajaxResponseListOfStations(response) {
-	var responseDiv, responseOutput, responseOutputArray, responseOutputTable, pin = [];
+	var responseDiv, responseOutput, responseOutputArray, responseOutputTable;
+	var pin = [];
+
 	responseOutput = response.responseJSON.results;
 
-	// console.log(responseOutput[0].latitude);
-	
-	$('.leaflet-interactive').empty();
-	$('.leaflet-pane.leaflet-shadow-pane').empty();
+	if (typeof response !== 'undefined') {
+		$('.leaflet-interactive').empty();
+		$('.leaflet-pane.leaflet-shadow-pane').empty();
 
-	/* for (i=0; i<responseOutput.length; i++) { */
-	for (i=0; i<responseOutput.length; i++) {
-		pin[i] = L.marker([responseOutput[i].latitude, responseOutput[i].longitude], {
-			name: responseOutput[i].name,
-			alt: responseOutput[i].name,
-			keyboard: true
-		});
-		pin[i].responseOutPut = responseOutput[i];
-		pin[i].on('click', function(){
-			document.getElementById('station').value = this.responseOutPut.id;
-			document.getElementById('stationinfo').innerHTML =
-				'Station name: ' + this.responseOutPut.name + ', Available ' +
-				this.responseOutPut.mindate + ' &mdash; ' +
-				this.responseOutPut.maxdate;
-		})
-		.addTo(map);
+		/* for (i=0; i<responseOutput.length; i++) { */
+		for (i=0; i<responseOutput.length; i++) {
+			pin[i] = L.marker([responseOutput[i].latitude, responseOutput[i].longitude], {
+				name: responseOutput[i].name,
+				alt: responseOutput[i].name,
+				keyboard: true
+			});
+			pin[i].responseOutPut = responseOutput[i];
+			pin[i].on('click', function(){
+				document.getElementById('station').value = this.responseOutPut.id;
+				document.getElementById('stationinfo').innerHTML =
+					'Station name: ' + this.responseOutPut.name + ', Available ' +
+					this.responseOutPut.mindate + ' &mdash; ' +
+					this.responseOutPut.maxdate;
+			})
+			.addTo(map);
 	}
+}
 
 	responseOutputArray = objectToArray(responseOutput);
 	responseOutputTable = arrayToTable(responseOutputArray, {th: true, thead: true, attrs : {class: 'w3-table-all'}});
@@ -589,6 +591,30 @@ function getDataSingleStationInfo(station) {
 	});
 }
 
+function getataWeatherStationMap() {
+	var urlOutput, singleStation;
+	var url = new URL(window.location.href);
+	if (typeof url.searchParams.get('station') !== 'undefined') {
+		singleStation = url.searchParams.get('station');
+	}
+	// If the station is named and not an ID, then get the id from the name
+	singleStation = stations[singleStation] || singleStation;
+
+	// Get info on single station
+	urlOutput = 'https://www.ncdc.noaa.gov/cdo-web/api/v2/stations/' + singleStation;
+	$.ajax({
+        url: urlOutput,
+        headers: {token: urlAndToken.token},
+        complete: function (response) {
+			weatherstationmap(response);
+        },
+        error: function (response) {
+            console.log('Error: No server response');
+        }
+	});
+}
+
+
 // get temerature highs
 function getHighs(dateRangeObj, year, row, station, compiledData) {
 	var i, j, urlOutput, chartTall, excelTable;
@@ -691,11 +717,27 @@ function sql() {
 // sqlbookmark
 
 
+function getUrlVals() {
+	var startYear, endYear, stationID, latlng;
+	var url = new URL(window.location.href);
+
+	// Check URL query string for values
+	// Example: http://localhost/?firstyear=2017&lastyear=2019&station=Vaasa
+	if (typeof url.searchParams.get('firstyear') !== 'undefined') {
+		document.getElementById('firstyear').value = url.searchParams.get('firstyear');
+	}
+	if (typeof url.searchParams.get('lastyear') !== 'undefined') {
+		document.getElementById('lastyear').value = url.searchParams.get('lastyear');
+	}
+	if (typeof url.searchParams.get('station') !== 'undefined') {
+		document.getElementById('station').value = url.searchParams.get('station');
+	}
+}
+
 function getFormInput() {
 	var year, stationID;
 	var dateRangeInput = {};
 	var compiledData = [];
-
 
 	dateRangeInput = {
 		start: {
@@ -745,12 +787,22 @@ function getFormInput() {
 	getHighs(dateRangeInput, year, 0, stationID, compiledData);
 }
 
-function weatherstationmap() {
+function weatherstationmap(response) {
 	var mapDiv, Map, mapBoxParams, mapBoxToken, mapBoxURL, mapBoxURLbase, attribution;
+	var latlng = [];
 	// mapDiv = $('<div id="mapid" style="height:180px"></div>')
 	// $('body').prepend(mapDiv);
 	// map = L.map('map').setView([51.505, -0.09], 13);
-	map = L.map('map').setView([62.3, 23.3], 5);
+
+	if (typeof response !== 'undefined') {
+		latlng = [response.responseJSON.latitude, response.responseJSON.longitude];
+		console.log(latlng);
+	} else {
+		getListOfStations(boundingboxes.laihia);
+		latlng = [62.3, 23.3];
+	}
+
+	map = L.map('map').setView(latlng, 8);
 
 	mapBoxURLbase = 'https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token={';
 	mapBoxToken = 'pk.eyJ1IjoidGltb3RoeWF1c3RlbiIsImEiOiJja2U4OG1zNTEwamhwMnlybm9od3Z1ZHA2In0.MU4oZlSuP2lf4yPU6mPESw';
@@ -799,7 +851,6 @@ function weatherstationmap() {
 
 function launchapp() {
 	getFormInput();
-
 }
 
 // This is normally launched via the html form,
@@ -832,8 +883,8 @@ function getListOfStations(mapviewBoundingBox) {
 
 // Launch app on load
 $(function () {
-	weatherstationmap();
-	getListOfStations(boundingboxes.laihia);
+	getUrlVals()
+	getataWeatherStationMap();
 	// plotlyChartTest();
 	// sql();
 });
