@@ -3,6 +3,7 @@ var arrayToTable = function (data, options) {
     "use strict";
 
     var table = $('<table />'),
+        colgroup,
         thead,
         tfoot,
         rows = [],
@@ -32,6 +33,14 @@ var arrayToTable = function (data, options) {
         }
         rows.push(row);
     }
+
+    // Part added by Timothy Austen
+    /* colgroup = $('<colgroup />');
+    for (i=0; i<data.length; i++) {
+        colgroup.append($('<col />'));
+    }
+    table.append(colgroup); */
+    // End of part added by Timothy Austen
 
     // if we want a thead use shift to get it
     if (options.thead) {

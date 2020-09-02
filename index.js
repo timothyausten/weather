@@ -404,11 +404,12 @@ function ajaxResponseSingleStationInfoStringified(response) {
 
 function ajaxResponseListOfStations(response) {
 	var responseDiv, responseOutput, responseOutputArray, responseOutputTable;
+	var responseOutputV2 = [];
 	var pin = [];
 
 	responseOutput = response.responseJSON.results;
 
-	if (typeof response !== 'undefined') {
+	if (typeof responseOutput !== 'undefined') {
 		$('.leaflet-interactive').empty();
 		$('.leaflet-pane.leaflet-shadow-pane').empty();
 
@@ -417,9 +418,17 @@ function ajaxResponseListOfStations(response) {
 			pin[i] = L.marker([responseOutput[i].latitude, responseOutput[i].longitude], {
 				name: responseOutput[i].name,
 				alt: responseOutput[i].name,
-				keyboard: true
+				keyboard: true,
+				riseOnHover: true
 			});
 			pin[i].responseOutPut = responseOutput[i];
+			pin[i].bindTooltip(
+				responseOutput[i].name + '<br>' + 
+				responseOutput[i].id + '<br>' +
+				responseOutput[i].elevation + ' meters <br>' + 
+				responseOutput[i].mindate + ' - ' +
+				responseOutput[i].maxdate
+			);
 			pin[i].on('click', function(){
 				document.getElementById('station').value = this.responseOutPut.id;
 				document.getElementById('stationinfo').innerHTML =
@@ -430,13 +439,40 @@ function ajaxResponseListOfStations(response) {
 			.addTo(map);
 	}
 }
+	/* responseOutput.Min = responseOutput.mindate;
+	responseOutput.Max = responseOutput.maxdate;
+	responseOutput.Grade = responseOutput.datacoverage;
+	delete responseOutput.mindate;
+	delete responseOutput.maxdate;
+	delete responseOutput.datacoverage;
+	delete responseOutput.latitude;
+	delete responseOutput.longitude; */
+	/* = responseOutput.
+	responseOutput. = responseOutput.
+	responseOutput. = responseOutput.
+	responseOutput. = responseOutput. */
 
-	responseOutputArray = objectToArray(responseOutput);
-	responseOutputTable = arrayToTable(responseOutputArray, {th: true, thead: true, attrs : {class: 'w3-table-all'}});
+	for (i=0; i<responseOutput.length; i++) {
+		responseOutputV2[i] = {};
+		responseOutputV2[i].Name = responseOutput[i].name;
+		responseOutputV2[i].El = responseOutput[i].elevation;
+		responseOutputV2[i].Min = responseOutput[i].mindate;
+		responseOutputV2[i].Max = responseOutput[i].maxdate;
+	}
+
+
+	responseOutputArray = objectToArray(responseOutputV2);
+	responseOutputTable = arrayToTable(responseOutputArray, {
+		th: true,
+		thead: true,
+		attrs : {class: 'w3-table-all'}
+	});
+
 
 	if ($('#stationlist')) $('#stationlist').remove();  // If responseDiv exists then remove it 
 	responseDiv = $('<div id="stationlist"></div>');
-    responseDiv.html(responseOutputTable);
+	responseDiv.html(responseOutputTable);
+	responseDiv
 	$('body').append(responseDiv);
 }
 
@@ -794,15 +830,15 @@ function weatherstationmap(response) {
 	// $('body').prepend(mapDiv);
 	// map = L.map('map').setView([51.505, -0.09], 13);
 
-	if (typeof response !== 'undefined') {
+	if (typeof response.responseJSON.latitude !== 'undefined') {
 		latlng = [response.responseJSON.latitude, response.responseJSON.longitude];
-		console.log(latlng);
 	} else {
-		getListOfStations(boundingboxes.laihia);
 		latlng = [62.3, 23.3];
 	}
 
 	map = L.map('map').setView(latlng, 8);
+
+	getListOfStations(boundingBox(map).toString());
 
 	mapBoxURLbase = 'https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token={';
 	mapBoxToken = 'pk.eyJ1IjoidGltb3RoeWF1c3RlbiIsImEiOiJja2U4OG1zNTEwamhwMnlybm9od3Z1ZHA2In0.MU4oZlSuP2lf4yPU6mPESw';
@@ -835,16 +871,14 @@ function weatherstationmap(response) {
 	}
 	openStreetMapFunc();
 
-
 	map.on('moveend', function() {
 		var mapviewBoundingBox = boundingBox(this);
 		var rectOptions = {color: 'Red', weight: 1};
 		/* var rectangle = L.rectangle(mapviewBoundingBox, rectOptions);
 		rectangle.addTo(this); */
 		var bb = mapviewBoundingBox;
-		bb = bb[0][0] + ', ' + bb[0][1] + ', ' + bb[1][0] + ', ' + bb[1][1];
 		// var mapviewBoundingBox = map.toBBoxString(); // didn't work
-		getListOfStations(bb);
+		getListOfStations(bb.toString());
    });
 }
 
@@ -899,3 +933,13 @@ $(function () {
 // $('#output').html(responseString);
 // var responseJSON = response.responseJSON;
 // url: 'https://www.ncdc.noaa.gov/cdo-web/api/v2/datasets?stationid=GHCND:US1WACK0003',
+
+
+// Tasks:
+// Make station names case insensitive
+// Shrink list of stations table
+// Make tUX step-by-step
+// Change Web Page title
+// Tooltips
+// Make marker appear on load
+// Fahrenheit
