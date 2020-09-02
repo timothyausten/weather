@@ -1,24 +1,22 @@
-
 <!DOCTYPE html>
 <html>
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width" />
 <title>Historical Weather</title>
-<link rel="stylesheet" href="normalize.css">
 <link rel="stylesheet" href="w3.css">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Raleway">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css"
     integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ=="
     crossorigin=""/>
-<link rel="stylesheet" href="index.css">
 <style>
-.chart {
+    .chart {
         max-width: 1000px;
     }
 </style>
 </head>
 <body>
+
 <div class="w3-container inputs">
     <h1 class="w3-xlarge">Weather History</h1>
     <div id="map" style="width:90%; max-width:1000px; height:400px"></div>
@@ -30,33 +28,28 @@
         Years: <input style="width:45px" type="text" id="firstyear" name="firstyear" value="1993">
         &mdash; <input style="width:45px" type="text" id="lastyear" name="lastyear" value="2019">
         <button class="w3-btn w3-white w3-border"
-            style="margin: 10px" onclick="launchapp()" type="button">Create chart</button>
+            style="margin: 10px" onclick="launchapp()" type="button">View chart</button>
     </form>
     <div id="progress"></div>
     <div id="exceltable"></div>
 </div>
+
 <div class="w3-container outputs">
     <div id="contourchart"          class="chart" style="display:block;"></div>
     <div id="contourchartestimated" class="chart" style="display:none;"></div>
-    <form id="estimateform">
-        <input type="checkbox" id="estimate" name="estimate"  onchange="estimateData()">
+    <form id="estimateform" style="display:none;">
+        <input type="checkbox" id="estimate" name="estimate" onchange="estimateData()">
         <label for="estimate">Fill in missing data points</label>
-        <button class="w3-btn w3-white w3-border"
-        style="margin: 10px" onclick="backtomap()" type="button">Back to map</button>
     </form>
 </div>
 
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
-    <script src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js"
-        integrity="sha512-gZwIG9x3wUXg2hdXF6+rVkLF/0Vi9U8D2Ntg4Ga5I5BZpVkVxlJWbSQtXPSiUTtC0TjtGOmxa1AJPuV0CPthew=="
-        crossorigin=""></script>
-    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
-    <script src="alasql.min.js"></script>
-    <script src="arrayToTable.js"></script>
-    <script src="transposearray.js"></script>
-    <script src="weatherlibrary.js"></script>
-    <script src="contourchart.js"></script>
-    <script src="contourcharttest.js"></script>
-    <script src="index.js"></script>
-</body>
-</html>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<script src="alasql.min.js"></script>
+<script src="arrayToTable.js"></script>
+<script src="transposearray.js"></script>
+<script src="weatherlibrary.js"></script>
+<script src="contourchart.js"></script>
+<script src="index.js"></script>
+
+</body></html>

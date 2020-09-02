@@ -115,7 +115,7 @@ function plotlyChart(data, dateRangeObj) {
 
 	$('#contourchart').empty(); // Clear chart before adding new chart
 	$('#contourchartestimated').empty(); // Clear chart before adding new chart
-	document.getElementById('estimateform').style.display = 'inline';
+	// document.getElementById('estimateform').style.display = 'inline';
 
 	//Remove year from bottom tick labels
 	// For example change "Jan 2000" to "Jan"

@@ -1,0 +1,28 @@
+body, h1 { font-family: "Raleway", Arial, sans-serif; }
+
+h1 {
+    letter-spacing: 6px;
+    text-transform: uppercase;
+    color: gray;
+}
+
+.pre { white-space: pre; }
+
+input { margin: 8px 0 0 0; }
+
+#stationlist {color: red; }
+
+@media only screen and (max-width: 400px) {
+    #stationlist { display: none; color: red; }
+}
+
+.chart {
+    width: 1000px;
+}
+
+.inputs {
+    display: block;
+}
+.outputs {
+    display: none;
+}

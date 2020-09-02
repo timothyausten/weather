@@ -473,7 +473,7 @@ function ajaxResponseListOfStations(response) {
 	responseDiv = $('<div id="stationlist"></div>');
 	responseDiv.html(responseOutputTable);
 	responseDiv
-	$('body').append(responseDiv);
+	$('.inputs').append(responseDiv);
 }
 
 function getHighsResponse(response, row, compiledData, dateRangeObj, year) {
@@ -698,6 +698,8 @@ function getHighs(dateRangeObj, year, row, station, compiledData) {
 						thead: false
 				});
 				// $('#exceltable').html(excelTable);
+				$('.inputs').css({'display': 'none'});
+				$('.outputs').css({'display': 'block'});
 				plotlyChart(compiledData, dateRangeObj);
 				$('#progress').empty();
 			}
@@ -913,6 +915,10 @@ function getListOfStations(mapviewBoundingBox) {
 	getDataListOfStations(urlParameters);
 }
 
+function backtomap() {
+	$('.inputs').css({'display': 'block'});
+	$('.outputs').css({'display': 'none'});
+}
 
 
 // Launch app on load
