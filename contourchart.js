@@ -133,10 +133,14 @@ function plotlyChart(data, dateRangeObj) {
 	function shiftMonth() {
 		// Relabel the months because
 		// the dates are artificially given as 2000-01-01 - 2000-12-31
-		// The months are repeated so that
-		// the estimated chart can have its elements replaced, too
-		$('.xtick text').each(function (index) {
-			var m = ['Dec', 'Feb', 'Apr', 'Jun', 'Aug', 'Oct', 'Dec', 'Feb', 'Apr', 'Jun', 'Aug', 'Oct'];
+		$('#contourchart .xtick text').each(function (index) {
+			var m = ['Dec', 'Feb', 'Apr', 'Jun', 'Aug', 'Oct'];
+			$(this).text(
+				m[index]
+			);
+		});
+		$('#contourchartestimated .xtick text').each(function (index) {
+			var m = ['Dec', 'Feb', 'Apr', 'Jun', 'Aug', 'Oct'];
 			$(this).text(
 				m[index]
 			);
