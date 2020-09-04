@@ -32,10 +32,12 @@ function plotlyChart(data, dateRangeObj) {
 	//Optional functions for x-axis
 
 	function year2000() {
-		// The year 2000 is forced for each record
-		// Plotly interprets ISO date string as date and sorts dates in ascending order
-		x[i] = '2000' + '-' + data[0][i].mmdd;
-		console.log(x[i]);
+		// Give dates artificially given as 2000-01-01 - 2000-12-31
+		// Plotly can interpret ISO date string as date and sort dates in ascending order
+		// This is OK except that Feb 29 is forced for each year and given a null value
+		// if it isn't really a leap year so that each year is 366 days.
+		var dayOne = new Date('2000-01-01');
+		x[i] = addDays(dayOne, i)
 	}
 	function yearOne() {
 		// Dates of first year
@@ -45,7 +47,7 @@ function plotlyChart(data, dateRangeObj) {
 	function mmddNum() {
 		// Only the month and date are taken. They are outputted as a four digit number. The chart is messed up.
 		x[i] = data[0][i].date.substr(5,2) + data[0][i].date.substr(8,2) + '';
-		x[i] = x[i]*1 // Convert to number
+		x[i] = x[i]*1; // Convert to number
 		console.log(x[i]);
 	}
 	function key() {
@@ -80,7 +82,12 @@ function plotlyChart(data, dateRangeObj) {
 	// End of optional functions for x-axis
 
 	// Create x-axis labels
-	data[0].map(i => key());
+	//data[0].map(i => key());
+	for (i=0; i<data[0].length; i++) {
+		year2000();
+	}
+
+
 
 	// Create y-axis labels (years)
 	for (i=0; i<(dateRangeObj.end.year - dateRangeObj.start.year + 1); i++) {
@@ -122,5 +129,20 @@ function plotlyChart(data, dateRangeObj) {
 	Plotly.newPlot('contourchart', data);
 	Plotly.newPlot('contourchartestimated', dataEstimated);
 	if (document.getElementById('fahrenheit').checked) { toFahrenheit(); };
+
+	function shiftMonth() {
+		// Relabel the months because
+		// the dates are artificially given as 2000-01-01 - 2000-12-31
+		// The months are repeated so that
+		// the estimated chart can have its elements replaced, too
+		$('.xtick text').each(function (index) {
+			var m = ['Dec', 'Feb', 'Apr', 'Jun', 'Aug', 'Oct', 'Dec', 'Feb', 'Apr', 'Jun', 'Aug', 'Oct'];
+			$(this).text(
+				m[index]
+			);
+		});
+	}
+	shiftMonth();
+	
 }
 

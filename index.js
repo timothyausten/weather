@@ -119,7 +119,6 @@ function toFahrenheit() {
 	});
 }
 
-
 function toggleFahrenheit() {
 	var checkbox = document.getElementById('fahrenheit');
 	if (!checkbox.checked) {
@@ -994,17 +993,22 @@ $(function () {
 // url: 'https://www.ncdc.noaa.gov/cdo-web/api/v2/datasets?stationid=GHCND:US1WACK0003',
 
 
-// Tasks:
-// x Shrink list of stations table
-// x Change Web Page title
-// x Tooltips
-// x Make marker appear on load
-//   Fahrenheit
-//   Show station info below chart
-//   Page title above chart
-//   Make UX step-by-step
-//   Make station names case insensitive
-//   Loading progress not shown until server returns response
-//   Different kinds of temperatures
-//   Keep old map on return to input view
-//   Show months on x-axis
+/* 
+Tasks:
+x Shrink list of stations table
+x Change Web Page title
+x Tooltips
+x Make marker appear on load
+x Fahrenheit
+x Show months on x-axis
+  Show station info below chart
+  Page title above chart
+  Make UX step-by-step
+  Make station names case insensitive
+  Loading progress not shown until server returns response
+  Different kinds of temperatures
+  Keep old map on return to input view
+  Clickable station list
+  Sortable station list
+  Show correct date on crosshair (issue with leap days)
+*/
