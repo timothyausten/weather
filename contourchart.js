@@ -23,6 +23,7 @@ function smooth(values, alpha) {
 // smooth(array, 0.85);
 
 function plotlyChart(data, dateRangeObj) {
+	var fahrenheit = [];
 	var i, j,
 	x = [],
 	y = [],
@@ -78,22 +79,20 @@ function plotlyChart(data, dateRangeObj) {
 
 	// End of optional functions for x-axis
 
-
 	// Create x-axis labels
-	for (i=0; i<data[0].length; i++) {
-		key();
-	}
+	data[0].map(i => key());
+
 	// Create y-axis labels (years)
 	for (i=0; i<(dateRangeObj.end.year - dateRangeObj.start.year + 1); i++) {
 		y[i] = dateRangeObj.start.year + i;
 	}
+
 	// Create 2D array of values for z
-	for (i=0; i<data.length; i++) {
-		z[i] = [];
-		for (j=0; j<data[i].length; j++) {
-			z[i][j] = data[i][j].value;
-		}
-	}
+	z = data.map(i => i.map(j => j.value));
+
+	// Make a version of z in fahrenheit
+	fahrenheit = z.map(i => i.map(j => j*9/5+32));
+	// z = fahrenheit;
 
 	// Data smoothing
 	// z = smooth(z, 16.00);
@@ -122,5 +121,6 @@ function plotlyChart(data, dateRangeObj) {
 	// https://javascriptinfo.com/view/2815623/formatting-text-from-axis-ticks-in-plotly-using-tickformat
 	Plotly.newPlot('contourchart', data);
 	Plotly.newPlot('contourchartestimated', dataEstimated);
+	if (document.getElementById('fahrenheit').checked) { toFahrenheit(); };
 }
 

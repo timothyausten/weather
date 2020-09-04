@@ -38,9 +38,12 @@
 <div class="w3-container outputs">
     <div id="contourchart"          class="chart" style="display:block;"></div>
     <div id="contourchartestimated" class="chart" style="display:none;"></div>
+    <div id="stationinfo-output"></div>
     <form id="estimateform">
         <input type="checkbox" id="estimate" name="estimate"  onchange="estimateData()">
         <label for="estimate">Fill in missing data points</label>
+        <input type="checkbox" id="fahrenheit" name="fahrenheit" onchange="toggleFahrenheit()">
+        <label for="fahrenheit">Fahrenheit</label>
         <button class="w3-btn w3-white w3-border"
         style="margin: 10px" onclick="backtomap()" type="button">Back to map</button>
     </form>

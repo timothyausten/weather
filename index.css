@@ -13,7 +13,7 @@ input { margin: 8px 0 0 0; }
 #stationlist {color: red; }
 
 @media only screen and (max-width: 400px) {
-    #stationlist { display: none; color: red; }
+    #stationlist { display: none; }
 }
 
 .chart {

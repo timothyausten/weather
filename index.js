@@ -85,6 +85,50 @@ function estimateData() {
 	}
 }
 
+function toCelcius() {
+	$('.cbaxis text').each(function () {
+		// Check if minus sign
+		// For some reason this causes string*1 to return NaN
+		if (isNaN($(this).text()*1)) {
+			$(this).text(
+				// Remove the leading negative sign before calculating,
+				// then make it negative again
+				($(this).text().substring(1)*-1-32)*5/9
+			);
+		} else {
+			$(this).text(
+				($(this).text().substring(0)-32)*5/9
+			);
+		}
+	});
+}
+
+function toFahrenheit() {
+	$('.cbaxis text').each(function () {
+		// Check if minus sign
+		// For some reason this causes string*1 to return NaN
+		if (isNaN($(this).text()*1)) {
+			$(this).text(
+				$(this).text().substring(1)*-9/5+32
+			);
+		} else {
+			$(this).text(
+				$(this).text().substring(0)*9/5+32
+			);
+		}
+	});
+}
+
+
+function toggleFahrenheit() {
+	var checkbox = document.getElementById('fahrenheit');
+	if (!checkbox.checked) {
+		toCelcius();
+	} else {
+		toFahrenheit();
+	}
+}
+
 /*
 Available datasets
     "GHCND": "Daily Summaries",
@@ -770,6 +814,15 @@ function getUrlVals() {
 	if (typeof url.searchParams.get('station') !== 'undefined') {
 		document.getElementById('station').value = url.searchParams.get('station');
 	}
+	if (typeof url.searchParams.get('metric') !== 'undefined') {
+		if (url.searchParams.get('metric') === 'false') {
+			document.getElementById('fahrenheit').checked = true;
+		} else {
+			document.getElementById('fahrenheit').checked = false;
+		}
+	} else {
+		document.getElementById('fahrenheit').checked = false;
+	}
 }
 
 function getFormInput() {
@@ -942,10 +995,16 @@ $(function () {
 
 
 // Tasks:
-// Make station names case insensitive
-// Shrink list of stations table
-// Make tUX step-by-step
-// Change Web Page title
-// Tooltips
-// Make marker appear on load
-// Fahrenheit
+// x Shrink list of stations table
+// x Change Web Page title
+// x Tooltips
+// x Make marker appear on load
+//   Fahrenheit
+//   Show station info below chart
+//   Page title above chart
+//   Make UX step-by-step
+//   Make station names case insensitive
+//   Loading progress not shown until server returns response
+//   Different kinds of temperatures
+//   Keep old map on return to input view
+//   Show months on x-axis
