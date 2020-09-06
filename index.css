@@ -1,6 +1,6 @@
 body, h1 { font-family: "Raleway", Arial, sans-serif; }
 
-h1 {
+h1, h2, h3 {
     letter-spacing: 6px;
     text-transform: uppercase;
     color: gray;

@@ -447,8 +447,13 @@ function ajaxResponseSingleStationInfoStringified(response) {
 
 function ajaxResponseSingleStationInfo(response) {
 	// Send json as text directly to html:
+	var r = response.responseJSON;
 	var t = JSON.stringify(response.responseJSON, null, 4);
-	$('#stationinfo-output').text(t);
+	$('#stationinfo-output').text(
+		'Station: ' + r.name + ', ' +
+		'ID: ' + r.id + ', ' +
+		'Elevation: ' + r.elevation + ' m'
+	);
 }
 
 function ajaxResponseListOfStations(response) {
@@ -497,11 +502,13 @@ function ajaxResponseListOfStations(response) {
 
 		//Create list of weather stations in map view
 		for (i=0; i<r.length; i++) {
-			rV2[i] = {};
-			rV2[i].Name = r[i].name;
-			rV2[i].El = r[i].elevation;
-			rV2[i].Min = r[i].mindate;
-			rV2[i].Max = r[i].maxdate;
+			rV2[i] = {
+				Name: r[i].name,
+				El: r[i].elevation,
+				Min: r[i].mindate,
+				Max: r[i].maxdate,
+				id: r[i].id,
+			};
 		}
 
 		responseOutputArray = objectToArray(rV2);
@@ -515,6 +522,19 @@ function ajaxResponseListOfStations(response) {
 		responseDiv = $('<div id="stationlist"></div>');
 		responseDiv.html(responseOutputTable);
 		$('.inputs').append(responseDiv);
+
+		$('#stationlist table>tr').each(function(i) {
+			$(this).on('click', function() {
+				document.getElementById('station').value = r[i+1].id;
+				document.getElementById('stationinfo').innerHTML = 
+					'Station name: ' + r[i+1].name + ', ' +
+					'ID: ' + r[i+1].id + ', ' +
+					'Elevation: ' + r[i+1].elevation + ', ' +
+					'Coordinates: ' + r[i+1].latitude + '. ' + r[i+1].longitude;
+			});
+		});
+
+
 	}
 }
 
