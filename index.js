@@ -445,78 +445,77 @@ function ajaxResponseSingleStationInfoStringified(response) {
 	$('body').append(responseDiv);
 }
 
+function ajaxResponseSingleStationInfo(response) {
+	// Send json as text directly to html:
+	var t = JSON.stringify(response.responseJSON, null, 4);
+	$('#stationinfo-output').text(t);
+}
+
 function ajaxResponseListOfStations(response) {
-	var responseDiv, responseOutput, responseOutputArray, responseOutputTable;
-	var responseOutputV2 = [];
-	var pin = [];
+	var responseDiv,
+		r,
+		responseOutputArray,
+		responseOutputTable,
+		rV2 = [],
+		pin = [];
 
-	responseOutput = response.responseJSON.results;
+	function singleStationInfo(obj) {
+		var o = obj.r;
+		return 'Station name: ' +
+		o.name + ', Available ' +
+		o.mindate + ' &mdash; ' +
+		o.maxdate;
+	}
 
-	if (typeof responseOutput !== 'undefined') {
+	if (typeof response !== 'undefined') {
+		r = response.responseJSON.results;
 		$('.leaflet-interactive').empty();
 		$('.leaflet-pane.leaflet-shadow-pane').empty();
 
 		/* for (i=0; i<responseOutput.length; i++) { */
-		for (i=0; i<responseOutput.length; i++) {
-			pin[i] = L.marker([responseOutput[i].latitude, responseOutput[i].longitude], {
-				name: responseOutput[i].name,
-				alt: responseOutput[i].name,
+		for (i=0; i<r.length; i++) {
+			pin[i] = L.marker([r[i].latitude, r[i].longitude], {
+				name: r[i].name,
+				alt: r[i].name,
 				keyboard: true,
 				riseOnHover: true
 			});
-			pin[i].responseOutPut = responseOutput[i];
+			pin[i].r = r[i];
 			pin[i].bindTooltip(
-				responseOutput[i].name + '<br>' + 
-				responseOutput[i].id + '<br>' +
-				responseOutput[i].elevation + ' meters <br>' + 
-				responseOutput[i].mindate + ' - ' +
-				responseOutput[i].maxdate
+				r[i].name + '<br>' + 
+				r[i].id + '<br>' +
+				r[i].elevation + ' meters <br>' + 
+				r[i].mindate + ' - ' +
+				r[i].maxdate
 			);
-			pin[i].on('click', function(){
-				document.getElementById('station').value = this.responseOutPut.id;
-				document.getElementById('stationinfo').innerHTML =
-					'Station name: ' + this.responseOutPut.name + ', Available ' +
-					this.responseOutPut.mindate + ' &mdash; ' +
-					this.responseOutPut.maxdate;
+			pin[i].on('click', function() {
+				document.getElementById('station').value = this.r.id;
+				document.getElementById('stationinfo').innerHTML = singleStationInfo(this);
 			})
 			.addTo(map);
+		}
+
+		//Create list of weather stations in map view
+		for (i=0; i<r.length; i++) {
+			rV2[i] = {};
+			rV2[i].Name = r[i].name;
+			rV2[i].El = r[i].elevation;
+			rV2[i].Min = r[i].mindate;
+			rV2[i].Max = r[i].maxdate;
+		}
+
+		responseOutputArray = objectToArray(rV2);
+		responseOutputTable = arrayToTable(responseOutputArray, {
+			th: true,
+			thead: true,
+			attrs : {class: 'w3-table-all'}
+		});
+	
+		if ($('#stationlist')) $('#stationlist').remove();  // If responseDiv exists then remove it 
+		responseDiv = $('<div id="stationlist"></div>');
+		responseDiv.html(responseOutputTable);
+		$('.inputs').append(responseDiv);
 	}
-}
-	/* responseOutput.Min = responseOutput.mindate;
-	responseOutput.Max = responseOutput.maxdate;
-	responseOutput.Grade = responseOutput.datacoverage;
-	delete responseOutput.mindate;
-	delete responseOutput.maxdate;
-	delete responseOutput.datacoverage;
-	delete responseOutput.latitude;
-	delete responseOutput.longitude; */
-	/* = responseOutput.
-	responseOutput. = responseOutput.
-	responseOutput. = responseOutput.
-	responseOutput. = responseOutput. */
-
-	for (i=0; i<responseOutput.length; i++) {
-		responseOutputV2[i] = {};
-		responseOutputV2[i].Name = responseOutput[i].name;
-		responseOutputV2[i].El = responseOutput[i].elevation;
-		responseOutputV2[i].Min = responseOutput[i].mindate;
-		responseOutputV2[i].Max = responseOutput[i].maxdate;
-	}
-
-
-	responseOutputArray = objectToArray(responseOutputV2);
-	responseOutputTable = arrayToTable(responseOutputArray, {
-		th: true,
-		thead: true,
-		attrs : {class: 'w3-table-all'}
-	});
-
-
-	if ($('#stationlist')) $('#stationlist').remove();  // If responseDiv exists then remove it 
-	responseDiv = $('<div id="stationlist"></div>');
-	responseDiv.html(responseOutputTable);
-	responseDiv
-	$('.inputs').append(responseDiv);
 }
 
 function getHighsResponse(response, row, compiledData, dateRangeObj, year) {
@@ -662,7 +661,7 @@ function getDataSingleStationInfo(station) {
         url: urlOutput,
         headers: {token: urlAndToken.token},
         complete: function (response) {
-            ajaxResponseSingleStationInfo(response);
+			ajaxResponseSingleStationInfo(response);
         },
         error: function (response) {
             console.log('Error: No server response');
@@ -744,6 +743,7 @@ function getHighs(dateRangeObj, year, row, station, compiledData) {
 				$('.inputs').css({'display': 'none'});
 				$('.outputs').css({'display': 'block'});
 				plotlyChart(compiledData, dateRangeObj);
+				getDataSingleStationInfo(station);
 				$('#progress').empty();
 			}
 			if (year < dateRangeObj.end.year) {
@@ -970,8 +970,13 @@ function getListOfStations(mapviewBoundingBox) {
 function backtomap() {
 	$('.inputs').css({'display': 'block'});
 	$('.outputs').css({'display': 'none'});
+	$('.back-to-chart').css({'display': 'inline-block'});
 }
-
+function backtochart() {
+	$('.inputs').css({'display': 'none'});
+	$('.outputs').css({'display': 'block'});
+	$('.back-to-chart').css({'display': 'none'});
+}
 
 // Launch app on load
 $(function () {
