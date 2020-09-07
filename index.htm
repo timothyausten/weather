@@ -19,18 +19,19 @@
 </style>
 </head>
 <body>
-<h1 class="w3-xlarge">Weather History</h1>
 <div class="w3-container inputs">
+    <h1 class="w3-xlarge">Weather History</h1>
     <div id="map" style="width:90%; max-width:1000px; height:400px"></div>
     <div id="stationinfo"></div>
     <form style="margin: 0 0 10px 0" id="form">
-        Station ID: Select station by map pin <input type="text" id="station" name="station" value="Kauhajoki" autofocus><br>
+        Station ID: Select station by map pin
+        <input type="text" id="station" name="station" value="GHCND:FIE00143471" autofocus><br>
         <!-- First day: <input  style="width:25px" type="text" id="startday" name="startday" value="1">
         First month: <input style="width:25px" type="text" id="startmonth" name="startmonth" value="10"><br> -->
         Years: <input style="width:45px" type="text" id="firstyear" name="firstyear" value="1993">
         &mdash; <input style="width:45px" type="text" id="lastyear" name="lastyear" value="2019">
         <button class="w3-btn w3-white w3-border"
-            style="margin:10px" onclick="launchapp()" type="button">Create new chart</button>
+            style="margin:10px" onclick="newchart()" type="button">Create new chart</button>
         <button class="w3-btn w3-white w3-border back-to-chart"
             style="margin:10px; display:none;" onclick="backtochart()" type="button">Back to last chart</button>
       </form>
@@ -39,6 +40,7 @@
     <div id="exceltable"></div>
 </div>
 <div class="w3-container outputs">
+    <h1 class="w3-xlarge">Weather History</h1>
     <div id="contourchart"          class="chart" style="display:block;"></div>
     <div id="contourchartestimated" class="chart" style="display:none;"></div>
     <div id="stationinfo-output" class="pre"></div>

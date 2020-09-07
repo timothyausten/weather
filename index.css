@@ -5,6 +5,12 @@ h1, h2, h3 {
     text-transform: uppercase;
     color: gray;
 }
+.outputs>h1 {
+    position: absolute;
+    top: 0;
+    left: 16px;
+    z-index: 99999
+}
 
 .pre { white-space: pre; }
 

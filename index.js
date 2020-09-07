@@ -154,7 +154,8 @@ stations = {
    Vaasa:      'GHCND:FIE00144212', /* Since 1952. 1994-1996 missing. */
    Seinäjoki:  'GHCND:FIE00144322',
    Ilomantsi:  'GHCND:FIE00145052', /* 1999-2019 */
-   Seville:    'GHCND:SPE00120512'
+   Seville:    'GHCND:SPE00120512',
+   Paris:      'GHCND:FR000007150' /* Missing 2000-2004  */
 };
 boundingboxes = {
 	laihia:'62.7,21.8,63,22.7',
@@ -448,7 +449,7 @@ function ajaxResponseSingleStationInfoStringified(response) {
 function ajaxResponseSingleStationInfo(response) {
 	// Send json as text directly to html:
 	var r = response.responseJSON;
-	var t = JSON.stringify(response.responseJSON, null, 4);
+	var t = JSON.stringify(r, null, 4);
 	$('#stationinfo-output').text(
 		'Station: ' + r.name + ', ' +
 		'ID: ' + r.id + ', ' +
@@ -531,6 +532,8 @@ function ajaxResponseListOfStations(response) {
 					'ID: ' + r[i+1].id + ', ' +
 					'Elevation: ' + r[i+1].elevation + ', ' +
 					'Coordinates: ' + r[i+1].latitude + '. ' + r[i+1].longitude;
+				$('#stationlist table>tr').css({'font-weight': 'normal'});
+				$(this).css({'font-weight': 'bold'});
 			});
 		});
 
@@ -820,21 +823,21 @@ function sql() {
 
 function getUrlVals() {
 	var startYear, endYear, stationID, latlng;
-	var url = new URL(window.location.href);
+	var url = new URL(window.location.href).searchParams;
 
 	// Check URL query string for values
 	// Example: http://localhost/?firstyear=2017&lastyear=2019&station=Vaasa
-	if (typeof url.searchParams.get('firstyear') !== 'undefined') {
-		document.getElementById('firstyear').value = url.searchParams.get('firstyear');
+	if (typeof url.get('firstyear') !== 'undefined') {
+		document.getElementById('firstyear').value = url.get('firstyear');
 	}
-	if (typeof url.searchParams.get('lastyear') !== 'undefined') {
-		document.getElementById('lastyear').value = url.searchParams.get('lastyear');
+	if (typeof url.get('lastyear') !== 'undefined') {
+		document.getElementById('lastyear').value = url.get('lastyear');
 	}
-	if (typeof url.searchParams.get('station') !== 'undefined') {
-		document.getElementById('station').value = url.searchParams.get('station');
+	if (typeof url.get('station') !== 'undefined') {
+		document.getElementById('station').value = url.get('station');
 	}
-	if (typeof url.searchParams.get('metric') !== 'undefined') {
-		if (url.searchParams.get('metric') === 'false') {
+	if (typeof url.get('metric') !== 'undefined') {
+		if (url.get('metric') === 'false') {
 			document.getElementById('fahrenheit').checked = true;
 		} else {
 			document.getElementById('fahrenheit').checked = false;
@@ -842,6 +845,12 @@ function getUrlVals() {
 	} else {
 		document.getElementById('fahrenheit').checked = false;
 	}
+}
+
+function setUrlVals(params) {
+	var vals, base, url;
+	var newurl = window.location.protocol + "//" + window.location.host + window.location.pathname +'?' + $.param(params);
+	window.history.pushState({path: newurl}, '', newurl);
 }
 
 function getFormInput() {
@@ -886,11 +895,23 @@ function getFormInput() {
 
 	// console.table(dateRangeInput);
 
+
+	// Reset form values
+	// document.getElementById('firstyear').value = dateRangeInput.start.year;
+	// document.getElementById('lastyear').value = dateRangeInput.end.year;
+
 	stationID = document.getElementById('station').value; // get station name
 
 	// If station name exists in list, use that,
-	// else try to enter it as a stationID
+	// else enter it directly as a stationID
 	stationID = stations[stationID] || stationID;
+
+	setUrlVals({
+		metric: document.getElementById('fahrenheit').checked,
+		firstyear: dateRangeInput.start.year,
+		lastyear: dateRangeInput.end.year,
+		station: stationID
+	});
 
 	year = dateRangeInput.start.year;
 	// getDataSingleStationInfo(stationID);
@@ -957,7 +978,7 @@ function weatherstationmap(response) {
 }
 
 
-function launchapp() {
+function newchart() {
 	getFormInput();
 }
 
@@ -1000,7 +1021,7 @@ function backtochart() {
 
 // Launch app on load
 $(function () {
-	getUrlVals()
+	getUrlVals();
 	getataWeatherStationMap();
 	// plotlyChartTest();
 	// sql();
@@ -1026,14 +1047,15 @@ x Tooltips
 x Make marker appear on load
 x Fahrenheit
 x Show months on x-axis
-  Show station info below chart
-  Page title above chart
+x Keep old map on return to input view
+x Clickable station list
+x Show station info below chart
+  Page title below chart
   Make UX step-by-step
   Make station names case insensitive
   Loading progress not shown until server returns response
   Different kinds of temperatures
-  Keep old map on return to input view
-  Clickable station list
   Sortable station list
   Show correct date on crosshair (issue with leap days)
 */
+
