@@ -144,24 +144,6 @@ function plotlyChart(data, dateRangeObj) {
 	Plotly.newPlot('contourchartestimated', dataEstimated, layout);
 	if (document.getElementById('fahrenheit').checked) { toFahrenheit(); };
 
-	function shiftMonth() {
-		// Relabel the months because
-		// the dates are artificially given as 2000-01-01 - 2000-12-31
-		$('#contourchart .xtick text').each(function (index) {
-			var m = ['Dec', 'Feb', 'Apr', 'Jun', 'Aug', 'Oct'];
-			$(this).text(
-				m[index]
-			);
-		});
-		$('#contourchartestimated .xtick text').each(function (index) {
-			var m = ['Dec', 'Feb', 'Apr', 'Jun', 'Aug', 'Oct'];
-			$(this).text(
-				m[index]
-			);
-		});
-	}
-	// shiftMonth();
-
 	// Download data as text file
 	function download(data) {
 		var el = document.createElement('a');
@@ -175,7 +157,7 @@ function plotlyChart(data, dateRangeObj) {
 	
 		document.body.removeChild(el);
 	}
-	download(data);
+	// download(data);
 	
 }
 
