@@ -24,6 +24,7 @@ function smooth(values, alpha) {
 
 function plotlyChart(data, dateRangeObj) {
 	var fahrenheit = [];
+	var layout = {};
 	var i, j,
 	x = [],
 	y = [],
@@ -32,11 +33,11 @@ function plotlyChart(data, dateRangeObj) {
 	//Optional functions for x-axis
 
 	function year2000() {
-		// Give dates artificially given as 2000-01-01 - 2000-12-31
+		// Dates artificially given as 1999-10-01 - 2000-09-30
 		// Plotly can interpret ISO date string as date and sort dates in ascending order
 		// This is OK except that Feb 29 is forced for each year and given a null value
 		// if it isn't really a leap year so that each year is 366 days.
-		var dayOne = new Date('2000-01-01');
+		var dayOne = new Date('1999-10-01');
 		x[i] = addDays(dayOne, i)
 	}
 	function yearOne() {
@@ -119,6 +120,19 @@ function plotlyChart(data, dateRangeObj) {
 		connectgaps: true
 	}];
 
+	// Force data from kauhajokidata.js
+	// data = kauhajokiData;
+	// dataEstimated = kauhajokiData;
+
+	// For more time formatting types, see: https://github.com/d3/d3-time-format/blob/master/README.md
+	layout = {
+		title: '',
+		xaxis: {
+			/* tickformat: '%d %B (%a)\n %Y' */
+			tickformat: '%b %e' /* Short month name and day of month */
+		}
+	};
+
 	$('#contourchart').empty(); // Clear chart before adding new chart
 	$('#contourchartestimated').empty(); // Clear chart before adding new chart
 	// document.getElementById('estimateform').style.display = 'inline';
@@ -126,8 +140,8 @@ function plotlyChart(data, dateRangeObj) {
 	//Remove year from bottom tick labels
 	// For example change "Jan 2000" to "Jan"
 	// https://javascriptinfo.com/view/2815623/formatting-text-from-axis-ticks-in-plotly-using-tickformat
-	Plotly.newPlot('contourchart', data);
-	Plotly.newPlot('contourchartestimated', dataEstimated);
+	Plotly.newPlot('contourchart', data, layout);
+	Plotly.newPlot('contourchartestimated', dataEstimated, layout);
 	if (document.getElementById('fahrenheit').checked) { toFahrenheit(); };
 
 	function shiftMonth() {
@@ -146,7 +160,22 @@ function plotlyChart(data, dateRangeObj) {
 			);
 		});
 	}
-	shiftMonth();
+	// shiftMonth();
+
+	// Download data as text file
+	function download(data) {
+		var el = document.createElement('a');
+		el.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(JSON.stringify(data, null, 4)));
+		el.setAttribute('download', 'weatherdata.txt');
+	
+		el.style.display = 'none';
+		document.body.appendChild(el);
+	
+		el.click();
+	
+		document.body.removeChild(el);
+	}
+	download(data);
 	
 }
 

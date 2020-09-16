@@ -1050,7 +1050,6 @@ x Show months on x-axis
 x Keep old map on return to input view
 x Clickable station list
 x Show station info below chart
-  Page title below chart
   Make UX step-by-step
   Make station names case insensitive
   Loading progress not shown until server returns response
