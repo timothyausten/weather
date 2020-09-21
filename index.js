@@ -677,7 +677,7 @@ function getDataListOfStations(urlParameters) {
 
 
 
-function getDataSingleStationInfo(station) {
+function getDataSingleStationInfoOld(station) {
 	var urlOutput = 'https://www.ncdc.noaa.gov/cdo-web/api/v2/stations/' + station;
 	// console.log(urlOutput);
 	$.ajax({
@@ -691,6 +691,59 @@ function getDataSingleStationInfo(station) {
         }
 	});
 }
+
+function getDataSingleStationInfo(station) {
+    $.ajax({
+        type: "POST",
+        url:"apikey.php",
+        complete: function (tokenResponse) {
+			var urlOutput = 'https://www.ncdc.noaa.gov/cdo-web/api/v2/stations/' + station;
+			// console.log(urlOutput);
+			$.ajax({
+				url: urlOutput,
+				headers: {token: tokenResponse.responseText},
+				complete: function (response) {
+					ajaxResponseSingleStationInfo(response);
+				},
+				error: function (tokenResponse) {
+					console.log('Error: No server response');
+				}
+			});
+        },
+        error: function (response) {
+            console.log('Error: No server response');
+        }
+    });
+};
+
+function getAPIKey(callback, arg) {
+    $.ajax({
+        type: "POST",
+        url:"apikey.php",
+        complete: function (tokenResponse) {
+			callback(arg);
+        },
+        error: function (response) {
+            console.log('Error: No server response');
+        }
+    });
+}
+// getAPIKey(getDataSingleStationInfo, station);
+
+function getApiResponseBroken() {
+    $.ajax({
+        type: "POST",
+        url:"apiresponse.php",
+        complete: function (response) {
+            console.log(response);
+        },
+        error: function (response) {
+			console.log('Error: No server response');
+			console.log(response.responseText);
+        }
+    });
+};
+// getApiResponse();
 
 function getataWeatherStationMap() {
 	var urlOutput, singleStation;
@@ -769,6 +822,7 @@ function getHighs(dateRangeObj, year, row, station, compiledData) {
 				getDataSingleStationInfo(station);
 				$('#progress').empty();
 			}
+			// If not final year then loop again
 			if (year < dateRangeObj.end.year) {
 				year++;
 				row++;
@@ -1050,11 +1104,14 @@ x Show months on x-axis
 x Keep old map on return to input view
 x Clickable station list
 x Show station info below chart
+x Show correct date on crosshair (issue with leap days)
+  Set initial measurement system according to URL
+  Change color of selected pin
   Make UX step-by-step
   Make station names case insensitive
   Loading progress not shown until server returns response
   Different kinds of temperatures
   Sortable station list
-  Show correct date on crosshair (issue with leap days)
+  Hide api key
 */
 

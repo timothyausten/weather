@@ -157,7 +157,7 @@ function plotlyChart(data, dateRangeObj) {
 	
 		document.body.removeChild(el);
 	}
-	// download(data);
+	//download(data);
 	
 }
 
