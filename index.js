@@ -1057,6 +1057,7 @@ function customUrl() {
 function getListOfStations(mapviewBoundingBox) {
 	var urlParameters = {
 		webpage: 'stations',
+		datatypeid: 'TMAX',
 		extent: mapviewBoundingBox
 	}
 	getDataListOfStations(urlParameters);
